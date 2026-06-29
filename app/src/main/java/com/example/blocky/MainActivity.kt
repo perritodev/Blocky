@@ -45,22 +45,50 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainContainer() {
-    var selectedTab by remember { mutableIntStateOf(0) }
     val context = LocalContext.current
     val settingsManager = remember { SettingsManager(context) }
-    
+    val dao = remember { AppDatabase.getDatabase(context).blockedCallDao() }
+    val scope = rememberCoroutineScope()
+
     var roleHeldState by remember { mutableStateOf(checkRoleHeld(context)) }
     var isEnabled by remember { mutableStateOf(settingsManager.isBlockingEnabled) }
     
-    val isProtectionActive = roleHeldState && isEnabled
-
-    // Safely attempt to observe database
-    val dao = remember { AppDatabase.getDatabase(context).blockedCallDao() }
     val blockedCount by dao.getBlockedCount().collectAsState(initial = 0)
     val history by dao.getAllBlockedCalls().collectAsState(initial = emptyList())
+
+    MainContent(
+        roleHeld = roleHeldState,
+        isEnabled = isEnabled,
+        blockedCount = blockedCount,
+        history = history,
+        onRoleChanged = { roleHeldState = it },
+        onEnabledChanged = {
+            isEnabled = it
+            settingsManager.isBlockingEnabled = it
+        },
+    ) { call ->
+        scope.launch {
+            dao.delete(call)
+            Toast.makeText(context, "Number unblocked", Toast.LENGTH_SHORT).show()
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MainContent(
+    roleHeld: Boolean,
+    isEnabled: Boolean,
+    blockedCount: Int,
+    history: List<BlockedCall>,
+    onRoleChanged: (Boolean) -> Unit,
+    onEnabledChanged: (Boolean) -> Unit,
+    onDeleteCall: (BlockedCall) -> Unit,
+) {
+    var selectedTab by remember { mutableIntStateOf(0) }
+    val isProtectionActive = roleHeld && isEnabled
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -72,18 +100,18 @@ fun MainContainer() {
                         Icon(
                             imageVector = Icons.Default.VerifiedUser,
                             contentDescription = stringResource(R.string.active_indicator),
-                            tint = Color(0xFF4CAF50), // Standard material green
-                            modifier = Modifier.padding(end = 16.dp)
+                            tint = Color(0xFF4CAF50),
+                            modifier = Modifier.padding(end = 16.dp),
                         )
                     } else {
                         Icon(
                             imageVector = Icons.Default.GppBad,
                             contentDescription = stringResource(R.string.shield_down),
                             tint = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.padding(end = 16.dp)
+                            modifier = Modifier.padding(end = 16.dp),
                         )
                     }
-                }
+                },
             )
         },
         bottomBar = {
@@ -117,15 +145,15 @@ fun MainContainer() {
             when (selectedTab) {
                 0 -> BlockyScreen(
                     blockedCount = blockedCount,
-                    isRoleHeldInitial = roleHeldState,
-                    onRoleChanged = { roleHeldState = it },
+                    isRoleHeldInitial = roleHeld,
+                    onRoleChanged = onRoleChanged,
                     isEnabledInitial = isEnabled,
-                    onEnabledChanged = { 
-                        isEnabled = it
-                        settingsManager.isBlockingEnabled = it
-                    }
+                    onEnabledChanged = onEnabledChanged,
                 )
-                1 -> HistoryScreen(history = history)
+                1 -> HistoryScreen(
+                    history = history,
+                    onDelete = onDeleteCall,
+                )
             }
         }
     }
@@ -251,7 +279,6 @@ fun BlockyScreen(
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = !isRoleHeldInitial,
             ) {
                 Text(text = stringResource(R.string.enable_protection_btn))
             }
@@ -261,12 +288,9 @@ fun BlockyScreen(
 
 @Composable
 fun HistoryScreen(
-    history: List<BlockedCall> = emptyList(),
+    history: List<BlockedCall>,
+    onDelete: (BlockedCall) -> Unit,
 ) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val dao = remember { AppDatabase.getDatabase(context).blockedCallDao() }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -289,15 +313,9 @@ fun HistoryScreen(
                     items = history,
                     key = { it.id },
                 ) { call ->
-                    HistoryItem(
-                        call = call,
-                        onDelete = {
-                            scope.launch {
-                                dao.delete(call)
-                                Toast.makeText(context, "Number unblocked", Toast.LENGTH_SHORT).show()
-                            }
-                        },
-                    )
+                    HistoryItem(call = call) {
+                        onDelete(call)
+                    }
                 }
             }
         }
@@ -358,7 +376,7 @@ fun BlockyScreenPreview() {
             onRoleChanged = {},
             isEnabledInitial = true,
             onEnabledChanged = {},
-            blockedCount = 12
+            blockedCount = 12,
         )
     }
 }
@@ -369,14 +387,14 @@ fun HistoryScreenPreview() {
     BlockyTheme {
         HistoryScreen(
             history = listOf(
-                BlockedCall(phoneNumber = "+1 234 567 890", timestamp = System.currentTimeMillis()),
-                BlockedCall(phoneNumber = "Private Number", timestamp = System.currentTimeMillis() - 3600000),
+                BlockedCall(id = 1, phoneNumber = "+1 234 567 890", timestamp = System.currentTimeMillis()),
+                BlockedCall(id = 2, phoneNumber = "Private Number", timestamp = System.currentTimeMillis() - 3600000),
             ),
-        )
+        ) {}
     }
 }
 
 private fun checkRoleHeld(context: Context): Boolean {
-    val roleManager = context.getSystemService(Context.ROLE_SERVICE) as RoleManager
+    val roleManager = (context.getSystemService(Context.ROLE_SERVICE) as? RoleManager) ?: return false
     return roleManager.isRoleHeld(RoleManager.ROLE_CALL_SCREENING)
 }
