@@ -1,0 +1,27 @@
+<resources>
+    <string name="app_name">Blocky</string>
+    <string name="protection_tab">Protection</string>
+    <string name="history_tab">History</string>
+    <string name="calls_blocked_label">Calls Blocked</string>
+    <string name="protection_active">Protection is currently active.</string>
+    <string name="protection_inactive">Protection is currently inactive.</string>
+    <string name="shield_active">Shield Active</string>
+    <string name="shield_down">Shield Down</string>
+    <string name="shield_active_desc">The app is screening your calls in the background.</string>
+    <string name="shield_down_desc">Grant permission to start blocking unknown calls.</string>
+    <string name="enable_protection_btn">Enable Protection</string>
+    <string name="protection_enabled_btn">Protection Enabled</string>
+    <string name="block_history_title">Block History</string>
+    <string name="no_blocked_calls">No blocked calls yet.</string>
+    <string name="blocked_status">Blocked</string>
+    <string name="toast_call_blocking_enabled">Call Blocking Enabled</string>
+    <string name="toast_role_not_granted">Role not granted</string>
+    <string name="toast_already_active">Already active</string>
+    <string name="content_description_shield">Shield icon</string>
+    <string name="content_description_history">History icon</string>
+    <string name="unknown_number">Unknown</string>
+    <string name="blocking_service_toggle">Blocking Service</string>
+    <string name="service_enabled">Service Enabled</string>
+    <string name="service_disabled">Service Disabled</string>
+    <string name="active_indicator">Protection is active</string>
+</resources>
