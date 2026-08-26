@@ -1,6 +1,13 @@
-# 🛡️ Blocky — Smart On-Device Call Protection
+<p align="center">
+  <img src="art/icon_playstore_512.png" width="120" height="120" alt="Blocky Logo" />
+</p>
 
-**Blocky** is a modern, lightweight, privacy-first Android call screening app built with Jetpack Compose and Material 3. It silently intercepts and blocks any call that is not in your contacts list.
+<h1 align="center">🛡️ Blocky — Smart On-Device Call Protection</h1>
+
+<p align="center">
+  <strong>A modern, lightweight, privacy-first Android call screening app built with Jetpack Compose and Material 3.</strong><br>
+  <em>Silently intercepts and blocks any call that is not in your contacts list.</em>
+</p>
 
 ---
 
