@@ -20,7 +20,7 @@
 You can download and install the pre-signed, production-ready APK directly:
 
 1. Go to the **[Releases](https://github.com/perritodev/Blocky/releases)** page.
-2. Download the latest `app-release.apk`.
+2. Download the latest **`Blocky.apk`**.
 3. Open the downloaded APK on your Android device.
 4. If prompted, allow **"Install from unknown sources"** for your browser or file manager.
 5. Follow the onboarding setup:
@@ -57,7 +57,7 @@ cd Blocky
 ```
 
 The compiled release APK will be located in:
-`app/build/outputs/apk/release/app-release.apk`
+`app/build/outputs/apk/release/Blocky.apk`
 
 ---
 
