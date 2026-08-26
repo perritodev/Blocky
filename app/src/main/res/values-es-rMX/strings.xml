@@ -1,0 +1,102 @@
+<resources>
+    <string name="app_name">Blocky</string>
+    <string name="protection_tab">Protección</string>
+    <string name="blocked_list_tab">Bloqueados</string>
+    <string name="whitelist_tab">Permitidos</string>
+    <string name="calls_blocked_label">Llamadas Bloqueadas</string>
+    <string name="protection_active">La protección está activa.</string>
+    <string name="protection_inactive">La protección está inactiva.</string>
+    <string name="shield_active">Escudo Activo</string>
+    <string name="shield_down">Escudo Desactivado</string>
+    <string name="shield_active_desc">La app está filtrando llamadas en segundo plano.</string>
+    <string name="shield_down_desc">Otorga permiso para comenzar a bloquear llamadas desconocidas.</string>
+    <string name="enable_protection_btn">Activar Protección</string>
+    <string name="protection_enabled_btn">Protección Activada</string>
+    <string name="block_history_title">Historial Diario</string>
+    <string name="blocked_numbers_title">Números Bloqueados</string>
+    <string name="no_blocked_calls">No hay llamadas bloqueadas hoy.</string>
+    <string name="no_blocked_numbers">No hay números en la lista.</string>
+    <string name="blocked_status">Bloqueada</string>
+    <string name="toast_call_blocking_enabled">Bloqueo de llamadas activado</string>
+    <string name="toast_role_not_granted">Permiso no otorgado</string>
+    <string name="toast_already_active">Ya está activo</string>
+    <string name="content_description_shield">Icono de escudo</string>
+    <string name="content_description_history">Icono de historial</string>
+    <string name="content_description_blocked_list">Icono de lista bloqueada</string>
+    <string name="content_description_whitelist">Icono de lista blanca</string>
+    <string name="unknown_number">Desconocido</string>
+    <string name="blocking_service_toggle">Servicio de Bloqueo</string>
+    <string name="service_enabled">Servicio Activado</string>
+    <string name="service_disabled">Servicio Desactivado</string>
+    <string name="active_indicator">La protección está activa</string>
+
+    <string name="notification_channel_name">Estado de Blocky</string>
+    <string name="notification_title">Blocky está protegiendo tu teléfono</string>
+    <string name="notification_text">El servicio de bloqueo de llamadas está activo.</string>
+
+    <string name="language_selection">Idioma / Language</string>
+    <string name="lang_english">English</string>
+    <string name="lang_spanish">Español</string>
+
+    <!-- Onboarding -->
+    <string name="welcome_title">Bienvenido a Blocky</string>
+    <string name="welcome_desc">Tu escudo personal contra llamadas desconocidas y no registradas.</string>
+    <string name="step_notification_title">Icono de Estado</string>
+    <string name="step_notification_desc">Permite las notificaciones para mostrar un icono de protección en la barra de estado.</string>
+    <string name="step_role_title">Filtrado de Llamadas</string>
+    <string name="step_role_desc">Blocky necesita ser tu app predeterminada para interceptar llamadas automáticamente.</string>
+
+    <string name="step_contacts_title">Mantén Amigos</string>
+    <string name="step_contacts_desc">Accede a contactos para NUNCA bloquear a personas que ya conoces.</string>
+    <string name="step_battery_title">Fiabilidad de Fondo</string>
+    <string name="step_battery_desc">Asegura que la protección siga activa incluso cuando el teléfono esté en reposo.</string>
+
+    <string name="grant_permission">Autorizar</string>
+    <string name="permission_granted">Autorizado</string>
+    <string name="set_default_app">Configurar</string>
+    <string name="role_granted">Listo</string>
+    <string name="get_started">Comenzar</string>
+    <string name="setup_complete">Configuración Completa</string>
+
+    <!-- New Features -->
+    <string name="whitelist_title">Números Permitidos</string>
+    <string name="whitelist_empty">No hay números en la lista blanca.</string>
+    <string name="add_to_whitelist">Permitir Número</string>
+    <string name="remove_from_whitelist">Quitar de Lista Blanca</string>
+    <string name="clear_all_history">Borrar Registro</string>
+    <string name="unblock_all">Desbloquear Todos</string>
+    <string name="open_system_settings">Configuración de Bloqueo del Teléfono</string>
+    <string name="toast_history_cleared">Registro borrado</string>
+    <string name="toast_unblocked_all">Todos los números desbloqueados</string>
+    <string name="toast_whitelisted">Número añadido a la lista blanca</string>
+    <string name="add_number_hint">Ingresa el número de teléfono</string>
+    <string name="add_btn">Añadir</string>
+
+    <string name="missing_setup_warning">Configuración incompleta. Algunas funciones podrían no servir.</string>
+    <string name="finish_setup_btn">Terminar Configuración</string>
+
+    <string name="support_tab">Soporte</string>
+    <string name="support_title">Solución de Problemas y Soporte</string>
+    <string name="support_desc">¿Tienes problemas o alguna sugerencia? Estamos para ayudarte.</string>
+    <string name="contact_btn">Contactar al Desarrollador</string>
+    <string name="reliability_guide_title">Mejorar la Fiabilidad</string>
+    <string name="reliability_guide_desc">Android a veces detiene apps en segundo plano para ahorrar batería. Para que Blocky filtre cada llamada, debe configurarse como \"Sin Restricciones\" en los ajustes de batería.</string>
+    <string name="configure_battery_btn">Optimizar Trabajo en Segundo Plano</string>
+    <string name="support_email_subject">Solicitud de Soporte - Blocky</string>
+    <string name="device_info_header">\n\n--- Info del Dispositivo (No borrar) ---\n</string>
+
+    <!-- Google Play Compliance & Prominent Disclosures -->
+    <string name="disclosure_title">Divulgación de Privacidad y Seguridad</string>
+    <string name="disclosure_contacts_title">Acceso a Contactos</string>
+    <string name="disclosure_contacts_desc">Blocky requiere acceso a tus Contactos estrictamente para comprobar si las llamadas entrantes provienen de personas guardadas en tu agenda. Toda la información se procesa 100% de forma local en tu dispositivo. Blocky NUNCA recopila, sube a servidores, vende ni comparte tus contactos personales con terceros.</string>
+    <string name="disclosure_notifications_title">Notificaciones</string>
+    <string name="disclosure_notifications_desc">Blocky utiliza notificaciones para mostrarte un indicador de estado continuo de que la protección está activa y avisarte cuando se filtre una llamada desconocida.</string>
+    <string name="disclosure_call_screening_title">Servicio de Filtrado de Llamadas</string>
+    <string name="disclosure_call_screening_desc">Blocky opera como Servicio de Filtrado de Llamadas para inspeccionar números entrantes y bloquear silenciosamente llamadas no deseadas o números desconocidos antes de que suene tu teléfono.</string>
+    <string name="disclosure_accept_btn">Acepto y Continuar</string>
+    <string name="disclosure_decline_btn">Ahora No</string>
+    <string name="privacy_policy_title">Política de Privacidad y Seguridad</string>
+    <string name="privacy_policy_btn">Política de Privacidad</string>
+    <string name="privacy_policy_content">Blocky está comprometido con la protección de tu privacidad.\n\n1. Procesamiento en el Dispositivo: Todo el filtrado, verificación de lista blanca y consulta de contactos se realiza exclusivamente de forma local.\n\n2. Sin Recopilación de Datos: Blocky NO recopila, almacena en servidores remotos ni transmite tu lista de contactos, historial ni datos personales.\n\n3. Permisos Utilizados:\n• Contactos (READ_CONTACTS): Para evitar bloquear llamadas de contactos conocidos.\n• Notificaciones (POST_NOTIFICATIONS): Para mostrar el estado de protección activa.\n• Rol de Filtrado de Llamadas: Para permitir que el sistema Android transmita eventos de llamadas entrantes a Blocky para su filtrado local.\n\n4. Terceros: Ningún dato del usuario se comparte ni vende a terceros o redes publicitarias.</string>
+    <string name="close_btn">Cerrar</string>
+</resources>

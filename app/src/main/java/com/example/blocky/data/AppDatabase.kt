@@ -5,9 +5,21 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [BlockedCall::class], version = 1, exportSchema = false)
+@Database(
+    entities = [
+        BlockedCall::class, 
+        WhitelistedNumber::class, 
+        PermanentBlockedNumber::class,
+        UnblockedNumber::class
+    ],
+    version = 4,
+    exportSchema = false
+)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun blockedCallDao(): BlockedCallDao
+    abstract fun whitelistedNumberDao(): WhitelistedNumberDao
+    abstract fun permanentBlockedNumberDao(): PermanentBlockedNumberDao
+    abstract fun unblockedNumberDao(): UnblockedNumberDao
 
     companion object {
         @Volatile
@@ -20,7 +32,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "blocky_database",
                 )
-                .fallbackToDestructiveMigration()
+                .fallbackToDestructiveMigration(true)
                 .build()
                 INSTANCE = instance
                 instance

@@ -1,22 +1,19 @@
 package com.example.blocky.data
 
-import androidx.room.Dao
-import androidx.room.Delete
-import androidx.room.Insert
-import androidx.room.Query
+import androidx.room.*
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface BlockedCallDao {
-    @Query("SELECT * FROM blocked_calls ORDER BY timestamp DESC")
-    fun getAllBlockedCalls(): Flow<List<BlockedCall>>
+    @Query("SELECT * FROM blocked_calls WHERE timestamp >= :since ORDER BY timestamp DESC")
+    fun getBlockedCallsSince(since: Long): Flow<List<BlockedCall>>
 
-    @Insert
-    suspend fun insert(blockedCall: BlockedCall)
+    @Query("SELECT COUNT(*) FROM blocked_calls WHERE timestamp >= :since")
+    fun getDailyBlockedCount(since: Long): Flow<Int>
 
-    @Query("SELECT COUNT(*) FROM blocked_calls")
-    fun getBlockedCount(): Flow<Int>
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(call: BlockedCall)
 
-    @Delete
-    suspend fun delete(blockedCall: BlockedCall)
+    @Query("DELETE FROM blocked_calls")
+    suspend fun clearAll()
 }

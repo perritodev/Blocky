@@ -13,3 +13,8 @@
 .externalNativeBuild
 .cxx
 local.properties
+.idea/
+/Blocky
+*.jks
+*.keystore
+mcp_config.json

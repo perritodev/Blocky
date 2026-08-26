@@ -1,7 +1,8 @@
 <resources>
     <string name="app_name">Blocky</string>
     <string name="protection_tab">Protection</string>
-    <string name="history_tab">History</string>
+    <string name="blocked_list_tab">Blocked List</string>
+    <string name="whitelist_tab">Whitelist</string>
     <string name="calls_blocked_label">Calls Blocked</string>
     <string name="protection_active">Protection is currently active.</string>
     <string name="protection_inactive">Protection is currently inactive.</string>
@@ -11,17 +12,91 @@
     <string name="shield_down_desc">Grant permission to start blocking unknown calls.</string>
     <string name="enable_protection_btn">Enable Protection</string>
     <string name="protection_enabled_btn">Protection Enabled</string>
-    <string name="block_history_title">Block History</string>
-    <string name="no_blocked_calls">No blocked calls yet.</string>
+    <string name="block_history_title">Daily History</string>
+    <string name="blocked_numbers_title">Blocked Numbers</string>
+    <string name="no_blocked_calls">No calls blocked today.</string>
+    <string name="no_blocked_numbers">No blocked numbers in list.</string>
     <string name="blocked_status">Blocked</string>
     <string name="toast_call_blocking_enabled">Call Blocking Enabled</string>
     <string name="toast_role_not_granted">Role not granted</string>
     <string name="toast_already_active">Already active</string>
     <string name="content_description_shield">Shield icon</string>
     <string name="content_description_history">History icon</string>
+    <string name="content_description_blocked_list">Blocked list icon</string>
+    <string name="content_description_whitelist">Whitelist icon</string>
     <string name="unknown_number">Unknown</string>
     <string name="blocking_service_toggle">Blocking Service</string>
     <string name="service_enabled">Service Enabled</string>
     <string name="service_disabled">Service Disabled</string>
     <string name="active_indicator">Protection is active</string>
+
+    <string name="notification_channel_name">Blocky Status</string>
+    <string name="notification_title">Blocky is protecting your phone</string>
+    <string name="notification_text">Call blocking service is active.</string>
+
+    <string name="language_selection">Language / Idioma</string>
+    <string name="lang_english">English</string>
+    <string name="lang_spanish">Español</string>
+
+    <!-- Onboarding -->
+    <string name="welcome_title">Welcome to Blocky</string>
+    <string name="welcome_desc">Your personal shield against unknown and non-registered callers.</string>
+    <string name="step_notification_title">Status Icon</string>
+    <string name="step_notification_desc">Allow notifications so we can show you a protection icon in your status bar.</string>
+    <string name="step_role_title">Call Screening</string>
+    <string name="step_role_desc">Blocky needs to be your default call screening app to intercept unknown calls automatically.</string>
+
+    <string name="step_contacts_title">Keep Friends</string>
+    <string name="step_contacts_desc">Access contacts so we NEVER block people you already know.</string>
+    <string name="step_battery_title">Background Reliability</string>
+    <string name="step_battery_desc">Ensure protection stays active even when your phone is sleeping.</string>
+
+    <string name="grant_permission">Grant</string>
+    <string name="permission_granted">Granted</string>
+    <string name="set_default_app">Set Default</string>
+    <string name="role_granted">Ready</string>
+    <string name="get_started">Get Started</string>
+    <string name="setup_complete">Setup Complete</string>
+
+    <!-- New Features -->
+    <string name="whitelist_title">Whitelisted Numbers</string>
+    <string name="whitelist_empty">No whitelisted numbers yet.</string>
+    <string name="add_to_whitelist">Add to Whitelist</string>
+    <string name="remove_from_whitelist">Remove from Whitelist</string>
+    <string name="clear_all_history">Clear Log</string>
+    <string name="unblock_all">Unblock All</string>
+    <string name="open_system_settings">Open Phone Block Settings</string>
+    <string name="toast_history_cleared">Log cleared</string>
+    <string name="toast_unblocked_all">All numbers unblocked</string>
+    <string name="toast_whitelisted">Number whitelisted</string>
+    <string name="add_number_hint">Enter phone number</string>
+    <string name="add_btn">Add</string>
+
+    <string name="missing_setup_warning">Setup is incomplete. Some features may not work.</string>
+    <string name="finish_setup_btn">Finish Setup</string>
+
+    <string name="support_tab">Support</string>
+    <string name="support_title">Troubleshooting &amp; Support</string>
+    <string name="support_desc">Having issues or have a suggestion? We\'re here to help.</string>
+    <string name="contact_btn">Contact Developer</string>
+    <string name="reliability_guide_title">Improve Reliability</string>
+    <string name="reliability_guide_desc">Android sometimes stops apps in the background to save battery. For Blocky to screen every call, it needs to be set to \"Unrestricted\" in your battery settings.</string>
+    <string name="configure_battery_btn">Optimize Background Work</string>
+    <string name="support_email_subject">Blocky Support Request</string>
+    <string name="device_info_header">\n\n--- Device Info (Do not delete) ---\n</string>
+
+    <!-- Google Play Compliance & Prominent Disclosures -->
+    <string name="disclosure_title">Privacy &amp; Data Safety Disclosure</string>
+    <string name="disclosure_contacts_title">Contacts Access</string>
+    <string name="disclosure_contacts_desc">Blocky requires access to your Contacts strictly to verify whether incoming callers are saved in your phonebook. All contact information is processed 100% locally on your device in real-time. Blocky NEVER collects, uploads, sells, or shares your personal contacts with external servers or third parties.</string>
+    <string name="disclosure_notifications_title">Notifications</string>
+    <string name="disclosure_notifications_desc">Blocky uses notifications to show an ongoing status indicator that call protection is active and alert you when an unknown call is screened.</string>
+    <string name="disclosure_call_screening_title">Call Screening Service</string>
+    <string name="disclosure_call_screening_desc">Blocky operates as a Call Screening Service to inspect incoming call numbers and silently block non-whitelisted spam or unknown callers before your phone rings.</string>
+    <string name="disclosure_accept_btn">I Agree &amp; Continue</string>
+    <string name="disclosure_decline_btn">Not Now</string>
+    <string name="privacy_policy_title">Privacy Policy &amp; Data Safety</string>
+    <string name="privacy_policy_btn">Privacy Policy</string>
+    <string name="privacy_policy_content">Blocky is committed to protecting your privacy.\n\n1. On-Device Processing: All screening, whitelist checking, and contact lookups occur exclusively on your local device.\n\n2. No Data Collection: Blocky does NOT collect, store on remote servers, or transmit your contact list, call history, or personal identifiers.\n\n3. Permissions Used:\n• Contacts (READ_CONTACTS): To avoid blocking calls from your known contacts.\n• Notifications (POST_NOTIFICATIONS): To display active protection status.\n• Call Screening Role: To allow the Android Telecom system to pass incoming call events to Blocky for local filtering.\n\n4. Third Parties: No user data is shared with or sold to third parties or advertising networks.</string>
+    <string name="close_btn">Close</string>
 </resources>
