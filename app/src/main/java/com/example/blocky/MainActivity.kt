@@ -293,106 +293,119 @@ fun OnboardingScreen(
         PrivacyPolicyDialog(onDismiss = { showPrivacyPolicyModal = false })
     }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .safeDrawingPadding()
-            .padding(24.dp)
-            .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally,
+            .safeDrawingPadding(),
+        contentAlignment = Alignment.Center
     ) {
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier
+                .widthIn(max = 540.dp)
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 8.dp)
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(selected = currentLang == "en", onClick = { onLanguageChanged("en") }, label = { Text(stringResource(R.string.lang_english)) })
-                FilterChip(selected = currentLang == "es", onClick = { onLanguageChanged("es") }, label = { Text(stringResource(R.string.lang_spanish)) })
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(selected = currentLang == "en", onClick = { onLanguageChanged("en") }, label = { Text(stringResource(R.string.lang_english)) })
+                    FilterChip(selected = currentLang == "es", onClick = { onLanguageChanged("es") }, label = { Text(stringResource(R.string.lang_spanish)) })
+                }
+                IconButton(onClick = { showPrivacyPolicyModal = true }) {
+                    Icon(Icons.Default.PrivacyTip, contentDescription = stringResource(R.string.privacy_policy_title), tint = MaterialTheme.colorScheme.primary)
+                }
             }
-            IconButton(onClick = { showPrivacyPolicyModal = true }) {
-                Icon(Icons.Default.PrivacyTip, contentDescription = stringResource(R.string.privacy_policy_title), tint = MaterialTheme.colorScheme.primary)
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Icon(imageVector = Icons.Default.Shield, contentDescription = null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.primary)
+            Text(text = stringResource(R.string.welcome_title), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text(text = stringResource(R.string.welcome_desc), style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            
+            Spacer(modifier = Modifier.height(10.dp))
+
+            OnboardingStep(
+                title = stringResource(R.string.step_role_title),
+                desc = stringResource(R.string.step_role_desc),
+                isDone = roleState,
+                btnText = stringResource(R.string.set_default_app),
+            ) {
+                val roleManager = context.getSystemService(Context.ROLE_SERVICE) as? RoleManager
+                roleManager?.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING)?.let { roleLauncher.launch(it) }
             }
-        }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Icon(imageVector = Icons.Default.Shield, contentDescription = null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.primary)
-        Text(text = stringResource(R.string.welcome_title), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-        Text(text = stringResource(R.string.welcome_desc), style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        
-        Spacer(modifier = Modifier.height(24.dp))
-
-        OnboardingStep(
-            title = stringResource(R.string.step_role_title),
-            desc = stringResource(R.string.step_role_desc),
-            isDone = roleState,
-            btnText = stringResource(R.string.set_default_app),
-        ) {
-            val roleManager = context.getSystemService(Context.ROLE_SERVICE) as? RoleManager
-            roleManager?.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING)?.let { roleLauncher.launch(it) }
-        }
-
-        OnboardingStep(
-            title = stringResource(R.string.step_contacts_title),
-            desc = stringResource(R.string.step_contacts_desc),
-            isDone = contactsState,
-            btnText = stringResource(R.string.grant_permission),
-        ) { 
-            showContactsDisclosure = true
-        }
-
-        OnboardingStep(
-            title = stringResource(R.string.step_notification_title),
-            desc = stringResource(R.string.step_notification_desc),
-            isDone = notificationState,
-            btnText = stringResource(R.string.grant_permission),
-        ) { 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                showNotificationDisclosure = true
+            OnboardingStep(
+                title = stringResource(R.string.step_contacts_title),
+                desc = stringResource(R.string.step_contacts_desc),
+                isDone = contactsState,
+                btnText = stringResource(R.string.grant_permission),
+            ) { 
+                showContactsDisclosure = true
             }
-        }
 
-        OnboardingStep(
-            title = stringResource(R.string.step_battery_title),
-            desc = stringResource(R.string.step_battery_desc),
-            isDone = batteryState,
-            btnText = stringResource(R.string.grant_permission),
-        ) {
-            val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
-            try {
-                context.startActivity(intent)
-            } catch (e: Exception) {
-                e.printStackTrace()
+            OnboardingStep(
+                title = stringResource(R.string.step_notification_title),
+                desc = stringResource(R.string.step_notification_desc),
+                isDone = notificationState,
+                btnText = stringResource(R.string.grant_permission),
+            ) { 
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    showNotificationDisclosure = true
+                }
             }
-        }
 
-        Spacer(modifier = Modifier.height(24.dp))
-        
-        Button(
-            onClick = onCompleted,
-            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-            enabled = roleState
-        ) {
-            Text(text = if (roleState && contactsState) stringResource(R.string.setup_complete) else stringResource(R.string.get_started))
-        }
+            OnboardingStep(
+                title = stringResource(R.string.step_battery_title),
+                desc = stringResource(R.string.step_battery_desc),
+                isDone = batteryState,
+                btnText = stringResource(R.string.grant_permission),
+            ) {
+                val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                try {
+                    context.startActivity(intent)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
 
-        TextButton(onClick = { showPrivacyPolicyModal = true }) {
-            Text(stringResource(R.string.privacy_policy_btn), fontSize = 12.sp)
+            Spacer(modifier = Modifier.height(10.dp))
+            
+            Button(
+                onClick = onCompleted,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = roleState
+            ) {
+                Text(text = if (roleState && contactsState) stringResource(R.string.setup_complete) else stringResource(R.string.get_started))
+            }
+
+            TextButton(onClick = { showPrivacyPolicyModal = true }) {
+                Text(stringResource(R.string.privacy_policy_btn), fontSize = 12.sp)
+            }
         }
     }
 }
 
 @Composable
 fun OnboardingStep(title: String, desc: String, isDone: Boolean, btnText: String, onClick: () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                Text(text = desc, style = MaterialTheme.typography.bodySmall)
+                Text(text = desc, style = MaterialTheme.typography.bodySmall, maxLines = 2)
             }
+            Spacer(modifier = Modifier.width(8.dp))
             if (isDone) {
                 Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF4CAF50))
             } else {
@@ -469,46 +482,66 @@ fun MainContent(
             }
         },
     ) { innerPadding ->
-        Column(modifier = Modifier.padding(innerPadding)) {
-            if (isSetupIncomplete && (selectedTab == 0)) {
-                Surface(color = MaterialTheme.colorScheme.errorContainer, modifier = Modifier.fillMaxWidth()) {
-                    Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text(text = stringResource(R.string.missing_setup_warning), modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelSmall)
-                        TextButton(onClick = onFinishOnboarding) { Text(stringResource(R.string.finish_setup_btn)) }
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box(
+                modifier = Modifier
+                    .widthIn(max = 600.dp)
+                    .fillMaxSize()
+            ) {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    if (isSetupIncomplete && (selectedTab == 0)) {
+                        Surface(color = MaterialTheme.colorScheme.errorContainer, modifier = Modifier.fillMaxWidth()) {
+                            Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Text(text = stringResource(R.string.missing_setup_warning), modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelSmall)
+                                TextButton(onClick = onFinishOnboarding) { Text(stringResource(R.string.finish_setup_btn)) }
+                            }
+                        }
                     }
-                }
-            }
-            
-            Box(modifier = Modifier.weight(1f)) {
-                when (selectedTab) {
-                    0 -> BlockyScreen(
-                        blockedCount = blockedCount,
-                        isRoleHeldInitial = roleHeld,
-                        onRoleChanged = onRoleChanged,
-                        isEnabledInitial = isEnabled,
-                        onEnabledChanged = onEnabledChanged,
-                        currentLang = currentLang,
-                        onLanguageChanged = onLanguageChanged,
-                    )
-                    1 -> BlockedListScreen(
-                        blockedList = permanentBlockedList,
-                        onUnblock = onUnblockNumber,
-                        onUnblockAll = onUnblockAll,
-                        onWhitelist = onAddToWhitelistFromBlocked
-                    )
-                    2 -> WhitelistScreen(
-                        whitelist = whitelist,
-                        onRemove = onRemoveFromWhitelist,
-                        onAddManual = onAddToWhitelistManual
-                    )
-                    3 -> TroubleshootingScreen(onShowPrivacyPolicy = { showPrivacyPolicyModal = true })
+                    
+                    Box(modifier = Modifier.weight(1f)) {
+                        when (selectedTab) {
+                            0 -> BlockyScreen(
+                                blockedCount = blockedCount,
+                                isRoleHeldInitial = roleHeld,
+                                onRoleChanged = onRoleChanged,
+                                isEnabledInitial = isEnabled,
+                                onEnabledChanged = onEnabledChanged,
+                                currentLang = currentLang,
+                                onLanguageChanged = onLanguageChanged,
+                            )
+                            1 -> BlockedListScreen(
+                                blockedList = permanentBlockedList,
+                                onUnblock = onUnblockNumber,
+                                onUnblockAll = onUnblockAll,
+                                onWhitelist = onAddToWhitelistFromBlocked
+                            )
+                            2 -> WhitelistScreen(
+                                whitelist = whitelist,
+                                onRemove = onRemoveFromWhitelist,
+                                onAddManual = onAddToWhitelistManual
+                            )
+                            3 -> TroubleshootingScreen(onShowPrivacyPolicy = { showPrivacyPolicyModal = true })
+                        }
+                    }
                 }
             }
         }
 
         if (showHistory) {
             ModalBottomSheet(onDismissRequest = { showHistory = false }) {
-                HistoryContent(history = historyLog, onClear = onClearHistory)
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(modifier = Modifier.widthIn(max = 600.dp).fillMaxWidth()) {
+                        HistoryContent(history = historyLog, onClear = onClearHistory)
+                    }
+                }
             }
         }
     }
