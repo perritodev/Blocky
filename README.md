@@ -9,6 +9,14 @@
   <em>Silently intercepts and blocks any call that is not in your contacts list.</em>
 </p>
 
+<p align="center">
+  <a href="https://github.com/perritodev/Blocky/releases/latest"><img src="https://img.shields.io/github/v/release/perritodev/Blocky?color=3DDC84&label=Release&logo=android" alt="Latest Release" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" /></a>
+  <img src="https://img.shields.io/badge/Platform-Android%2010%2B-brightgreen.svg?logo=android" alt="Platform" />
+  <img src="https://img.shields.io/badge/Kotlin-2.0-7F52FF.svg?logo=kotlin" alt="Kotlin" />
+  <img src="https://img.shields.io/badge/Privacy-100%25%20On--Device-success.svg" alt="Privacy" />
+</p>
+
 ---
 
 ## ✨ Key Features
@@ -45,7 +53,7 @@ You can download and install the pre-signed, production-ready APK directly:
 - **Local Database:** Room Database
 - **Framework API:** Android Telecom `CallScreeningService` + `RoleManager`
 - **Min SDK:** Android 10 (API 29)
-- **Target SDK:** Android 15 (API 35)
+- **Target SDK:** Android 15 / 16 (API 35+)
 
 ---
 
@@ -68,6 +76,15 @@ The compiled release APK will be located in:
 
 ---
 
+## 🤝 Community & Support
+
+- 🐛 **Found a bug?** Open an [Issue](https://github.com/perritodev/Blocky/issues).
+- 💡 **Have a feature idea?** Submit a [Feature Request](https://github.com/perritodev/Blocky/issues/new).
+- 🔒 **Security / Privacy:** See [SECURITY.md](SECURITY.md).
+- 🛠️ **Contributing:** See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+---
+
 ## 📄 License
 
-This project is open-source under the MIT License.
+This project is open-source under the [MIT License](LICENSE).
