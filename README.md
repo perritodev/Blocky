@@ -1,11 +1,12 @@
 # 🛡️ Blocky — Smart On-Device Call Protection
 
-**Blocky** is a modern, lightweight, privacy-first Android call screening app built with Jetpack Compose and Material 3. It silently intercepts and blocks incoming spam, fraud, and unknown callers before your phone rings.
+**Blocky** is a modern, lightweight, privacy-first Android call screening app built with Jetpack Compose and Material 3. It silently intercepts and blocks any call that is not in your contacts list.
 
 ---
 
 ## ✨ Key Features
 
+- 🚫 **Total Peace of Mind:** Don\'t receive any call you don\'t want — no spam, no fraud, no unknown callers.
 - 🛑 **Automatic Call Screening:** Silently blocks calls from unknown numbers not in your contacts.
 - 🔒 **100% Privacy / On-Device Processing:** Zero data collection, zero telemetry, no cloud servers. All screening and contact lookups happen entirely on your phone.
 - 📇 **Smart Contact Protection:** Integrates with your address book so friends, family, and known contacts are never blocked.
