@@ -5,14 +5,13 @@
 ---
 
 ## ✨ Key Features
-
-- 🚫 **Total Peace of Mind:** Don\'t receive any call you don\'t want — no spam, no fraud, no unknown callers.
-- 🛑 **Automatic Call Screening:** Silently blocks calls from unknown numbers not in your contacts.
-- 🔒 **100% Privacy / On-Device Processing:** Zero data collection, zero telemetry, no cloud servers. All screening and contact lookups happen entirely on your phone.
+- Dont receive any call you don't want, no spam, no fraud, no unknown callers.
+- 🛑 **Automatic Call Screening:** Silently blocks any number not in your contacts.
+- 🔒 **100% Privacy / On-Device Processing:** Zero data collection, all screening and contact lookups happen entirely on your phone.
 - 📇 **Smart Contact Protection:** Integrates with your address book so friends, family, and known contacts are never blocked.
 - 📝 **Whitelist & Blocklist:** Manually allow trusted numbers or permanently block specific persistent callers.
 - 📊 **Daily History:** Keep track of blocked calls with a daily log.
-- 🌐 **Multilingual:** Seamless toggle between English and Spanish.
+- 🌐 **Bi-Language:** Toggle between English and Spanish.
 
 ---
 
