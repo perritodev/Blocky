@@ -17,4 +17,5 @@ local.properties
 /Blocky
 *.jks
 *.keystore
+keystore.properties
 mcp_config.json
