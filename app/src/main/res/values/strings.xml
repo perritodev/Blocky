@@ -69,6 +69,10 @@
     <string name="toast_history_cleared">Log cleared</string>
     <string name="toast_unblocked_all">All numbers unblocked</string>
     <string name="toast_whitelisted">Number whitelisted</string>
+    <string name="toast_blocked">Number added to blocked list</string>
+    <string name="add_to_blocked">Add to Blocked List</string>
+    <string name="action_block">Block</string>
+    <string name="action_whitelist">Whitelist</string>
     <string name="add_number_hint">Enter phone number</string>
     <string name="add_btn">Add</string>
 

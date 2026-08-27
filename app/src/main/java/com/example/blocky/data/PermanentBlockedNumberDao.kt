@@ -20,6 +20,9 @@ interface PermanentBlockedNumberDao {
     @Delete
     suspend fun delete(number: PermanentBlockedNumber)
 
+    @Query("DELETE FROM permanent_blocked_numbers WHERE phoneNumber = :number")
+    suspend fun deleteByNumber(number: String)
+
     @Query("DELETE FROM permanent_blocked_numbers")
     suspend fun clearAll()
 }

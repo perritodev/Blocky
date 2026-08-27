@@ -63,7 +63,8 @@ fun BlockedListPreview() {
             blockedList = mockBlocked,
             onUnblock = {},
             onUnblockAll = {},
-            onWhitelist = {}
+            onWhitelist = {},
+            onAddManual = {}
         )
     }
 }

@@ -69,6 +69,10 @@
     <string name="toast_history_cleared">Registro borrado</string>
     <string name="toast_unblocked_all">Todos los números desbloqueados</string>
     <string name="toast_whitelisted">Número añadido a la lista blanca</string>
+    <string name="toast_blocked">Número añadido a la lista de bloqueados</string>
+    <string name="add_to_blocked">Añadir a Bloqueados</string>
+    <string name="action_block">Bloquear</string>
+    <string name="action_whitelist">Permitir</string>
     <string name="add_number_hint">Ingresa el número de teléfono</string>
     <string name="add_btn">Añadir</string>
 

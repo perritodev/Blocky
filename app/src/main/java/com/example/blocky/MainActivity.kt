@@ -170,11 +170,26 @@ fun MainContainer() {
                         Toast.makeText(context, R.string.toast_whitelisted, Toast.LENGTH_SHORT).show()
                     }
                 },
+                onAddToBlockedManual = { number ->
+                    scope.launch {
+                        val trimmed = number.trim()
+                        if (trimmed.isNotBlank()) {
+                            unblockedDao.deleteByNumber(trimmed)
+                            whitelistDao.deleteByNumber(trimmed)
+                            permanentBlockDao.insert(PermanentBlockedNumber(phoneNumber = trimmed))
+                            Toast.makeText(context, R.string.toast_blocked, Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                },
                 onAddToWhitelistManual = { number ->
                     scope.launch {
-                        unblockedDao.deleteByNumber(number)
-                        whitelistDao.insert(WhitelistedNumber(phoneNumber = number))
-                        Toast.makeText(context, R.string.toast_whitelisted, Toast.LENGTH_SHORT).show()
+                        val trimmed = number.trim()
+                        if (trimmed.isNotBlank()) {
+                            unblockedDao.deleteByNumber(trimmed)
+                            permanentBlockDao.deleteByNumber(trimmed)
+                            whitelistDao.insert(WhitelistedNumber(phoneNumber = trimmed))
+                            Toast.makeText(context, R.string.toast_whitelisted, Toast.LENGTH_SHORT).show()
+                        }
                     }
                 },
                 onRemoveFromWhitelist = { number ->
@@ -432,6 +447,7 @@ fun MainContent(
     onUnblockNumber: (PermanentBlockedNumber) -> Unit,
     onUnblockAll: () -> Unit,
     onAddToWhitelistFromBlocked: (PermanentBlockedNumber) -> Unit,
+    onAddToBlockedManual: (String) -> Unit,
     onAddToWhitelistManual: (String) -> Unit,
     onRemoveFromWhitelist: (WhitelistedNumber) -> Unit,
     onFinishOnboarding: () -> Unit,
@@ -454,7 +470,7 @@ fun MainContent(
             CenterAlignedTopAppBar(
                 title = { Text(stringResource(R.string.app_name)) },
                 navigationIcon = {
-                    if (selectedTab == 0) {
+                    if (selectedTab == 0 || selectedTab == 1) {
                         IconButton(onClick = { showHistory = true }) {
                             Icon(Icons.Default.History, contentDescription = stringResource(R.string.content_description_history))
                         }
@@ -518,7 +534,8 @@ fun MainContent(
                                 blockedList = permanentBlockedList,
                                 onUnblock = onUnblockNumber,
                                 onUnblockAll = onUnblockAll,
-                                onWhitelist = onAddToWhitelistFromBlocked
+                                onWhitelist = onAddToWhitelistFromBlocked,
+                                onAddManual = onAddToBlockedManual
                             )
                             2 -> WhitelistScreen(
                                 whitelist = whitelist,
@@ -539,7 +556,12 @@ fun MainContent(
                     contentAlignment = Alignment.Center
                 ) {
                     Box(modifier = Modifier.widthIn(max = 600.dp).fillMaxWidth()) {
-                        HistoryContent(history = historyLog, onClear = onClearHistory)
+                        HistoryContent(
+                            history = historyLog,
+                            onClear = onClearHistory,
+                            onAddToBlocked = onAddToBlockedManual,
+                            onAddToWhitelist = onAddToWhitelistManual
+                        )
                     }
                 }
             }
@@ -616,7 +638,12 @@ fun BlockyScreen(
 }
 
 @Composable
-fun HistoryContent(history: List<BlockedCall>, onClear: () -> Unit) {
+fun HistoryContent(
+    history: List<BlockedCall>,
+    onClear: () -> Unit,
+    onAddToBlocked: (String) -> Unit = {},
+    onAddToWhitelist: (String) -> Unit = {}
+) {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Text(text = stringResource(R.string.block_history_title), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
@@ -632,9 +659,25 @@ fun HistoryContent(history: List<BlockedCall>, onClear: () -> Unit) {
                 items(history, key = { it.id }) { call ->
                     val date = remember(call.timestamp) { SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()).format(Date(call.timestamp)) }
                     Card(modifier = Modifier.fillMaxWidth()) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Text(text = call.phoneNumber, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                            Text(text = date, style = MaterialTheme.typography.bodySmall)
+                        Row(
+                            modifier = Modifier.padding(12.dp).fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(text = call.phoneNumber, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                Text(text = date, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            if (call.phoneNumber != "Private / Unknown") {
+                                Row {
+                                    IconButton(onClick = { onAddToWhitelist(call.phoneNumber) }) {
+                                        Icon(Icons.Default.Check, contentDescription = stringResource(R.string.action_whitelist), tint = Color(0xFF4CAF50))
+                                    }
+                                    IconButton(onClick = { onAddToBlocked(call.phoneNumber) }) {
+                                        Icon(Icons.Default.Block, contentDescription = stringResource(R.string.action_block), tint = MaterialTheme.colorScheme.error)
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -648,9 +691,12 @@ fun BlockedListScreen(
     blockedList: List<PermanentBlockedNumber>,
     onUnblock: (PermanentBlockedNumber) -> Unit,
     onUnblockAll: () -> Unit,
-    onWhitelist: (PermanentBlockedNumber) -> Unit
+    onWhitelist: (PermanentBlockedNumber) -> Unit,
+    onAddManual: (String) -> Unit
 ) {
     val context = LocalContext.current
+    var textState by remember { mutableStateOf("") }
+
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Row(
             modifier = Modifier.padding(bottom = 16.dp),
@@ -670,12 +716,31 @@ fun BlockedListScreen(
             )
         }
 
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (blockedList.isNotEmpty()) {
+        OutlinedTextField(
+            value = textState,
+            onValueChange = { textState = it },
+            label = { Text(stringResource(R.string.add_number_hint)) },
+            modifier = Modifier.fillMaxWidth(),
+            trailingIcon = {
+                IconButton(onClick = {
+                    if (textState.isNotBlank()) {
+                        onAddManual(textState)
+                        textState = ""
+                    }
+                }) {
+                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_btn))
+                }
+            }
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        if (blockedList.isNotEmpty()) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Button(
                     onClick = onUnblockAll,
                     modifier = Modifier.fillMaxWidth(),
@@ -718,8 +783,8 @@ fun BlockedListScreen(
                     Card(modifier = Modifier.fillMaxWidth()) {
                         Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                             Text(text = number.phoneNumber, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
-                            IconButton(onClick = { onWhitelist(number) }) { Icon(Icons.Default.Check, null, tint = Color(0xFF4CAF50)) }
-                            IconButton(onClick = { onUnblock(number) }) { Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error) }
+                            IconButton(onClick = { onWhitelist(number) }) { Icon(Icons.Default.Check, contentDescription = stringResource(R.string.action_whitelist), tint = Color(0xFF4CAF50)) }
+                            IconButton(onClick = { onUnblock(number) }) { Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.unblock_all), tint = MaterialTheme.colorScheme.error) }
                         }
                     }
                 }
