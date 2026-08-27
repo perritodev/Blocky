@@ -49,11 +49,7 @@ You can download and install the pre-signed, production-ready APK directly:
 
 - **Language:** Kotlin
 - **UI Toolkit:** Jetpack Compose (Material 3)
-- **Architecture:** MVVM + Coroutines & Flow
 - **Local Database:** Room Database
-- **Framework API:** Android Telecom `CallScreeningService` + `RoleManager`
-- **Min SDK:** Android 10 (API 29)
-- **Target SDK:** Android 15 / 16 (API 35+)
 
 ---
 
