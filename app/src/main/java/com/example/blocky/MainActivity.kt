@@ -563,47 +563,54 @@ fun BlockyScreen(
         onRoleChanged(checkRoleHeld(context))
     }
 
-    Column(
-        modifier = modifier.fillMaxSize().padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
+    Box(
+        modifier = modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
     ) {
-        Text(text = stringResource(R.string.app_name), fontSize = 48.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(text = if (isRoleHeldInitial) stringResource(R.string.protection_active) else stringResource(R.string.protection_inactive), textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyLarge)
-        Spacer(modifier = Modifier.height(24.dp))
-        Text(text = blockedCount.toString(), fontSize = 64.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.secondary)
-        Text(text = stringResource(R.string.calls_blocked_label), style = MaterialTheme.typography.labelLarge)
-        Spacer(modifier = Modifier.height(48.dp))
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(text = stringResource(R.string.app_name), fontSize = 48.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(text = if (isRoleHeldInitial) stringResource(R.string.protection_active) else stringResource(R.string.protection_inactive), textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyLarge)
+            Spacer(modifier = Modifier.height(24.dp))
+            Text(text = blockedCount.toString(), fontSize = 64.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.secondary)
+            Text(text = stringResource(R.string.calls_blocked_label), style = MaterialTheme.typography.labelLarge)
+            Spacer(modifier = Modifier.height(48.dp))
 
-        Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = if (isRoleHeldInitial && isEnabledInitial) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer)) {
-            Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(text = if (isRoleHeldInitial && isEnabledInitial) stringResource(R.string.shield_active) else stringResource(R.string.shield_down), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
-                Text(text = when { !isRoleHeldInitial -> stringResource(R.string.shield_down_desc) !isEnabledInitial -> stringResource(R.string.service_disabled) else -> stringResource(R.string.shield_active_desc) }, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+            Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = if (isRoleHeldInitial && isEnabledInitial) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer)) {
+                Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(text = if (isRoleHeldInitial && isEnabledInitial) stringResource(R.string.shield_active) else stringResource(R.string.shield_down), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                    Text(text = when { !isRoleHeldInitial -> stringResource(R.string.shield_down_desc) !isEnabledInitial -> stringResource(R.string.service_disabled) else -> stringResource(R.string.shield_active_desc) }, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                }
             }
-        }
 
-        Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-        if (isRoleHeldInitial) {
-            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(text = if (isEnabledInitial) stringResource(R.string.service_enabled) else stringResource(R.string.service_disabled), style = MaterialTheme.typography.titleMedium)
-                Switch(checked = isEnabledInitial, onCheckedChange = onEnabledChanged)
+            if (isRoleHeldInitial) {
+                Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(text = if (isEnabledInitial) stringResource(R.string.service_enabled) else stringResource(R.string.service_disabled), style = MaterialTheme.typography.titleMedium)
+                    Switch(checked = isEnabledInitial, onCheckedChange = onEnabledChanged)
+                }
+            } else {
+                Button(onClick = {
+                    val roleManager = context.getSystemService(Context.ROLE_SERVICE) as? RoleManager
+                    roleManager?.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING)?.let { roleLauncher.launch(it) }
+                }, modifier = Modifier.fillMaxWidth()) {
+                    Text(text = stringResource(R.string.enable_protection_btn))
+                }
             }
-        } else {
-            Button(onClick = {
-                val roleManager = context.getSystemService(Context.ROLE_SERVICE) as? RoleManager
-                roleManager?.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING)?.let { roleLauncher.launch(it) }
-            }, modifier = Modifier.fillMaxWidth()) {
-                Text(text = stringResource(R.string.enable_protection_btn))
-            }
-        }
 
-        Spacer(modifier = Modifier.height(32.dp))
-        Text(text = stringResource(R.string.language_selection), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Row(modifier = Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            FilterChip(selected = currentLang == "en", onClick = { onLanguageChanged("en") }, label = { Text(stringResource(R.string.lang_english)) })
-            FilterChip(selected = currentLang == "es", onClick = { onLanguageChanged("es") }, label = { Text(stringResource(R.string.lang_spanish)) })
+            Spacer(modifier = Modifier.height(32.dp))
+            Text(text = stringResource(R.string.language_selection), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(modifier = Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                FilterChip(selected = currentLang == "en", onClick = { onLanguageChanged("en") }, label = { Text(stringResource(R.string.lang_english)) })
+                FilterChip(selected = currentLang == "es", onClick = { onLanguageChanged("es") }, label = { Text(stringResource(R.string.lang_spanish)) })
+            }
         }
     }
 }
