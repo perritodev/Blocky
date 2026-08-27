@@ -19,7 +19,7 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.example.blocky"
+        applicationId = "com.omargarcia.Blocky"
         minSdk = 29
         targetSdk = 37
         versionCode = 1
