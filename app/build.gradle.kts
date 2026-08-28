@@ -50,9 +50,6 @@ android {
         }
     }
 
-    base {
-        archivesName.set("Blocky")
-    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -60,6 +57,10 @@ android {
     buildFeatures {
         compose = true
     }
+}
+
+base {
+    archivesName.set("Blocky")
 }
 
 dependencies {
@@ -82,7 +83,6 @@ dependencies {
     implementation(libs.libphonenumber.android)
     
     testImplementation(libs.junit)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
