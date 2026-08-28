@@ -112,19 +112,24 @@ Every commit must be atomic, buildable, and adhere to the [Conventional Commits]
 
 ---
 
-## 5. 📦 GitHub Releases, Semantic Versioning & Asset Distribution
+## 5. 📦 Automated Release Governance, Versioning & Asset Distribution
 
-### 5.1 Semantic Versioning (SemVer 2.0.0)
+### 5.1 Mandatory Version Increment & Continuous Release Synchronization
+- **Continuous Version Tracking:** For every compile/release milestone, the agent **MUST** increment the project version code and semantic version name (`versionCode`, `versionName = "vMAJOR.MINOR.PATCH"`) in the build configuration (e.g. `app/build.gradle.kts`).
+- **Release Build Compilation:** Compile production release distribution artifacts (`./gradlew assembleRelease`) signed with official keys.
+- **Continuous GitHub Release Publishing:** Every production milestone must publish/update the official GitHub Release using `gh release create <tag> <assets...> --title "..." --notes "..."` or `gh release upload <tag> <assets...> --clobber`.
+
+### 5.2 Semantic Versioning (SemVer 2.0.0)
 Tag all release milestones with standard `vMAJOR.MINOR.PATCH` format:
 - `MAJOR` (v2.0.0): Incompatible API or structural breaking changes.
 - `MINOR` (v1.1.0): Backward-compatible new functionality.
 - `PATCH` (v1.0.1): Backward-compatible bug fixes and security patches.
 
-### 5.2 Release Asset Protocol
+### 5.3 Release Asset Protocol
 - Ensure all distribution artifacts (`.apk`, `.aab`, `.zip`, `.exe`, `.tar.gz`) are compiled in **Release mode** and properly code-signed with official keys before uploading.
 - Use `--clobber` when replacing existing release assets:
   ```bash
-  gh release upload v1.0.0 "app/build/outputs/apk/release/Blocky.apk" --clobber
+  gh release upload v1.0.1 "app/build/outputs/apk/release/Blocky.apk" --clobber
   ```
 
 ---
