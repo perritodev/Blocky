@@ -1277,9 +1277,9 @@ fun matchesSearchQuery(context: Context, phoneNumber: String, timestamp: Long, q
 }
 
 fun launchAddToContacts(context: Context, phoneNumber: String) {
-    val intent = Intent(Intent.ACTION_INSERT).apply {
-        type = "vnd.android.cursor.dir/raw_contact"
+    val intent = Intent(Intent.ACTION_INSERT, ContactsContract.Contacts.CONTENT_URI).apply {
         putExtra(ContactsContract.Intents.Insert.PHONE, phoneNumber)
+        flags = Intent.FLAG_ACTIVITY_NEW_TASK
     }
     try {
         context.startActivity(intent)
@@ -1288,6 +1288,7 @@ fun launchAddToContacts(context: Context, phoneNumber: String) {
             val fallbackIntent = Intent(Intent.ACTION_INSERT_OR_EDIT).apply {
                 type = ContactsContract.Contacts.CONTENT_ITEM_TYPE
                 putExtra(ContactsContract.Intents.Insert.PHONE, phoneNumber)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
             }
             context.startActivity(fallbackIntent)
         } catch (_: Exception) {
