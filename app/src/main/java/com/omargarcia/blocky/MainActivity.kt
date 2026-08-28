@@ -1059,41 +1059,37 @@ fun CallerDetailBottomSheet(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            OutlinedButton(
+                onClick = {
+                    onToggleList()
+                    onDismiss()
+                },
+                modifier = Modifier.fillMaxWidth()
             ) {
-                OutlinedButton(
-                    onClick = {
-                        onToggleList()
-                        onDismiss()
-                    },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(
-                        imageVector = if (isBlocked) Icons.Default.Check else Icons.Default.Block,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(Modifier.width(6.dp))
-                    Text(
-                        text = if (isBlocked) stringResource(R.string.action_move_to_whitelist) else stringResource(R.string.action_move_to_blocked),
-                        fontSize = 12.sp,
-                        maxLines = 1
-                    )
-                }
+                Icon(
+                    imageVector = if (isBlocked) Icons.Default.CheckCircle else Icons.Default.Block,
+                    contentDescription = null,
+                    tint = if (isBlocked) Color(0xFF4CAF50) else MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = if (isBlocked) stringResource(R.string.action_move_to_whitelist) else stringResource(R.string.action_move_to_blocked)
+                )
+            }
 
-                OutlinedButton(
-                    onClick = {
-                        onRemoveFromList()
-                        onDismiss()
-                    },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(Icons.Default.RemoveCircleOutline, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text(stringResource(R.string.action_remove_from_list), fontSize = 12.sp, maxLines = 1)
-                }
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedButton(
+                onClick = {
+                    onRemoveFromList()
+                    onDismiss()
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.RemoveCircleOutline, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.action_remove_from_list))
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -1107,7 +1103,7 @@ fun CallerDetailBottomSheet(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Icon(Icons.Default.DeleteForever, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(6.dp))
+                Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.action_delete_permanent))
             }
 
