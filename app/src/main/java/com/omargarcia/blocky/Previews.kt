@@ -1,10 +1,10 @@
-package com.example.blocky
+package com.omargarcia.blocky
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.blocky.data.PermanentBlockedNumber
-import com.example.blocky.data.WhitelistedNumber
-import com.example.blocky.ui.theme.BlockyTheme
+import com.omargarcia.blocky.data.PermanentBlockedNumber
+import com.omargarcia.blocky.data.WhitelistedNumber
+import com.omargarcia.blocky.ui.theme.BlockyTheme
 
 @Preview(showBackground = true, name = "Onboarding Screen")
 @Composable
@@ -63,7 +63,9 @@ fun BlockedListPreview() {
             blockedList = mockBlocked,
             onUnblock = {},
             onUnblockAll = {},
-            onWhitelist = {}
+            onWhitelist = {},
+            onDeletePermanent = {},
+            onAddManual = {}
         )
     }
 }
@@ -79,6 +81,8 @@ fun WhitelistPreview() {
         WhitelistScreen(
             whitelist = mockWhitelist,
             onRemove = {},
+            onDeletePermanent = {},
+            onBlockNumber = {},
             onAddManual = {}
         )
     }

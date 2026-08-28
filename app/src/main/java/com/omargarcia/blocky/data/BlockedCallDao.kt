@@ -1,4 +1,4 @@
-package com.example.blocky.data
+package com.omargarcia.blocky.data
 
 import androidx.room.*
 import kotlinx.coroutines.flow.Flow

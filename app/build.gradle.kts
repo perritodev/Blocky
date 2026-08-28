@@ -15,11 +15,11 @@ val keystoreProperties = Properties().apply {
 }
 
 android {
-    namespace = "com.example.blocky"
+    namespace = "com.omargarcia.blocky"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.example.blocky"
+        applicationId = "com.omargarcia.Blocky"
         minSdk = 29
         targetSdk = 37
         versionCode = 1
@@ -77,6 +77,9 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
+    
+    // Libphonenumber for Carrier and Geolocation lookup
+    implementation(libs.libphonenumber.android)
     
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))

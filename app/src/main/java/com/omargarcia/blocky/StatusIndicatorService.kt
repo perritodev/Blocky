@@ -1,4 +1,4 @@
-package com.example.blocky
+package com.omargarcia.blocky
 
 import android.Manifest
 import android.app.*

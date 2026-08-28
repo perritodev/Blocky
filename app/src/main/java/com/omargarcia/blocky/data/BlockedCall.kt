@@ -1,4 +1,4 @@
-package com.example.blocky.data
+package com.omargarcia.blocky.data
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

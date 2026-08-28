@@ -1,4 +1,4 @@
-package com.example.blocky.data
+package com.omargarcia.blocky.data
 
 import androidx.room.*
 import kotlinx.coroutines.flow.Flow
@@ -19,6 +19,9 @@ interface PermanentBlockedNumberDao {
 
     @Delete
     suspend fun delete(number: PermanentBlockedNumber)
+
+    @Query("DELETE FROM permanent_blocked_numbers WHERE phoneNumber = :number")
+    suspend fun deleteByNumber(number: String)
 
     @Query("DELETE FROM permanent_blocked_numbers")
     suspend fun clearAll()

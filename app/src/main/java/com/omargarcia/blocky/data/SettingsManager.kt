@@ -1,4 +1,4 @@
-package com.example.blocky.data
+package com.omargarcia.blocky.data
 
 import android.content.Context
 import android.content.SharedPreferences

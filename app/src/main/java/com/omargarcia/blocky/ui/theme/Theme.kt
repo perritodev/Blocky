@@ -1,4 +1,4 @@
-package com.example.blocky.ui.theme
+package com.omargarcia.blocky.ui.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme

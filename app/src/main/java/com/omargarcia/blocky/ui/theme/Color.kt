@@ -1,4 +1,4 @@
-package com.example.blocky.ui.theme
+package com.omargarcia.blocky.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

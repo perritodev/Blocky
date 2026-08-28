@@ -10,8 +10,10 @@ kotlin = "2.4.10"
 composeBom = "2026.08.00"
 room = "2.8.4"
 ksp = "2.3.11"
+libphonenumber = "8.13.55"
 
 [libraries]
+libphonenumber-android = { group = "io.michaelrocks", name = "libphonenumber-android", version.ref = "libphonenumber" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }

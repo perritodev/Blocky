@@ -1,4 +1,4 @@
-package com.example.blocky
+package com.omargarcia.blocky
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -9,10 +9,10 @@ import android.telecom.Call
 import android.telecom.CallScreeningService
 import android.telephony.PhoneNumberUtils
 import androidx.core.content.ContextCompat
-import com.example.blocky.data.AppDatabase
-import com.example.blocky.data.BlockedCall
-import com.example.blocky.data.BlockedCallDao
-import com.example.blocky.data.SettingsManager
+import com.omargarcia.blocky.data.AppDatabase
+import com.omargarcia.blocky.data.BlockedCall
+import com.omargarcia.blocky.data.BlockedCallDao
+import com.omargarcia.blocky.data.SettingsManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
