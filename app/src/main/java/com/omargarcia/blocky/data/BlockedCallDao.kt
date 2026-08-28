@@ -5,6 +5,9 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface BlockedCallDao {
+    @Query("SELECT * FROM blocked_calls ORDER BY timestamp DESC")
+    fun getAll(): Flow<List<BlockedCall>>
+
     @Query("SELECT * FROM blocked_calls WHERE timestamp >= :since ORDER BY timestamp DESC")
     fun getBlockedCallsSince(since: Long): Flow<List<BlockedCall>>
 
@@ -13,6 +16,12 @@ interface BlockedCallDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(call: BlockedCall)
+
+    @Delete
+    suspend fun delete(call: BlockedCall)
+
+    @Query("DELETE FROM blocked_calls WHERE phoneNumber = :phoneNumber")
+    suspend fun deleteByNumber(phoneNumber: String)
 
     @Query("DELETE FROM blocked_calls")
     suspend fun clearAll()

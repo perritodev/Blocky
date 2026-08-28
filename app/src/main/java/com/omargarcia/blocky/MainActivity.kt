@@ -124,7 +124,7 @@ fun MainContainer() {
     }
 
     val blockedCount by blockLogDao.getDailyBlockedCount(startOfDay).collectAsState(initial = 0)
-    val permanentBlockedList by permanentBlockDao.getAll().collectAsState(initial = emptyList())
+    val blockedCalls by blockLogDao.getAll().collectAsState(initial = emptyList())
     val whitelist by whitelistDao.getAllWhitelisted().collectAsState(initial = emptyList())
 
     Crossfade(targetState = isOnboardingCompleted, label = "ScreenTransition") { completed ->
@@ -133,7 +133,7 @@ fun MainContainer() {
                 roleHeld = roleHeldState,
                 isEnabled = isEnabled,
                 blockedCount = blockedCount,
-                permanentBlockedList = permanentBlockedList,
+                blockedList = blockedCalls,
                 whitelist = whitelist,
                 currentLang = currentLang,
                 onRoleChanged = { roleHeldState = it },
@@ -148,22 +148,26 @@ fun MainContainer() {
                 },
                 onUnblockNumber = { numberObj ->
                     scope.launch { 
-                        permanentBlockDao.delete(numberObj)
+                        blockLogDao.delete(numberObj)
+                        permanentBlockDao.deleteByNumber(numberObj.phoneNumber)
                         unblockedDao.insert(UnblockedNumber(phoneNumber = numberObj.phoneNumber))
+                        Toast.makeText(context, R.string.toast_deleted, Toast.LENGTH_SHORT).show()
                     }
                 },
                 onUnblockAll = {
                     scope.launch {
-                        permanentBlockedList.forEach {
+                        blockedCalls.forEach {
                             unblockedDao.insert(UnblockedNumber(phoneNumber = it.phoneNumber))
                         }
+                        blockLogDao.clearAll()
                         permanentBlockDao.clearAll()
                         Toast.makeText(context, R.string.toast_unblocked_all, Toast.LENGTH_SHORT).show()
                     }
                 },
                 onAddToWhitelistFromBlocked = { numberObj ->
                     scope.launch {
-                        permanentBlockDao.delete(numberObj)
+                        blockLogDao.delete(numberObj)
+                        permanentBlockDao.deleteByNumber(numberObj.phoneNumber)
                         unblockedDao.insert(UnblockedNumber(phoneNumber = numberObj.phoneNumber))
                         whitelistDao.insert(WhitelistedNumber(phoneNumber = numberObj.phoneNumber))
                         Toast.makeText(context, R.string.toast_whitelisted, Toast.LENGTH_SHORT).show()
@@ -173,13 +177,15 @@ fun MainContainer() {
                     scope.launch {
                         whitelistDao.delete(numberObj)
                         unblockedDao.deleteByNumber(numberObj.phoneNumber)
+                        blockLogDao.insert(BlockedCall(phoneNumber = numberObj.phoneNumber))
                         permanentBlockDao.insert(PermanentBlockedNumber(phoneNumber = numberObj.phoneNumber))
                         Toast.makeText(context, R.string.toast_blocked, Toast.LENGTH_SHORT).show()
                     }
                 },
                 onDeleteBlockedPermanent = { numberObj ->
                     scope.launch {
-                        permanentBlockDao.delete(numberObj)
+                        blockLogDao.delete(numberObj)
+                        permanentBlockDao.deleteByNumber(numberObj.phoneNumber)
                         Toast.makeText(context, R.string.toast_deleted, Toast.LENGTH_SHORT).show()
                     }
                 },
@@ -189,23 +195,13 @@ fun MainContainer() {
                         Toast.makeText(context, R.string.toast_deleted, Toast.LENGTH_SHORT).show()
                     }
                 },
-                onAddToBlockedManual = { number ->
-                    scope.launch {
-                        val trimmed = number.trim()
-                        if (trimmed.isNotBlank()) {
-                            unblockedDao.deleteByNumber(trimmed)
-                            whitelistDao.deleteByNumber(trimmed)
-                            permanentBlockDao.insert(PermanentBlockedNumber(phoneNumber = trimmed))
-                            Toast.makeText(context, R.string.toast_blocked, Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                },
                 onAddToWhitelistManual = { number ->
                     scope.launch {
                         val trimmed = number.trim()
                         if (trimmed.isNotBlank()) {
                             unblockedDao.deleteByNumber(trimmed)
                             permanentBlockDao.deleteByNumber(trimmed)
+                            blockLogDao.deleteByNumber(trimmed)
                             whitelistDao.insert(WhitelistedNumber(phoneNumber = trimmed))
                             Toast.makeText(context, R.string.toast_whitelisted, Toast.LENGTH_SHORT).show()
                         }
@@ -455,19 +451,18 @@ fun MainContent(
     roleHeld: Boolean,
     isEnabled: Boolean,
     blockedCount: Int,
-    permanentBlockedList: List<PermanentBlockedNumber>,
+    blockedList: List<BlockedCall>,
     whitelist: List<WhitelistedNumber>,
     currentLang: String,
     onRoleChanged: (Boolean) -> Unit,
     onEnabledChanged: (Boolean) -> Unit,
     onLanguageChanged: (String) -> Unit,
-    onUnblockNumber: (PermanentBlockedNumber) -> Unit,
+    onUnblockNumber: (BlockedCall) -> Unit,
     onUnblockAll: () -> Unit,
-    onAddToWhitelistFromBlocked: (PermanentBlockedNumber) -> Unit,
+    onAddToWhitelistFromBlocked: (BlockedCall) -> Unit,
     onAddToBlockedFromWhitelist: (WhitelistedNumber) -> Unit,
-    onDeleteBlockedPermanent: (PermanentBlockedNumber) -> Unit,
+    onDeleteBlockedPermanent: (BlockedCall) -> Unit,
     onDeleteWhitelistPermanent: (WhitelistedNumber) -> Unit,
-    onAddToBlockedManual: (String) -> Unit,
     onAddToWhitelistManual: (String) -> Unit,
     onRemoveFromWhitelist: (WhitelistedNumber) -> Unit,
     onFinishOnboarding: () -> Unit,
@@ -543,12 +538,11 @@ fun MainContent(
                                 onLanguageChanged = onLanguageChanged,
                             )
                             1 -> BlockedListScreen(
-                                blockedList = permanentBlockedList,
+                                blockedList = blockedList,
                                 onUnblock = onUnblockNumber,
                                 onUnblockAll = onUnblockAll,
                                 onWhitelist = onAddToWhitelistFromBlocked,
-                                onDeletePermanent = onDeleteBlockedPermanent,
-                                onAddManual = onAddToBlockedManual
+                                onDeletePermanent = onDeleteBlockedPermanent
                             )
                             2 -> WhitelistScreen(
                                 whitelist = whitelist,
@@ -636,17 +630,15 @@ fun BlockyScreen(
 
 @Composable
 fun BlockedListScreen(
-    blockedList: List<PermanentBlockedNumber>,
-    onUnblock: (PermanentBlockedNumber) -> Unit,
+    blockedList: List<BlockedCall>,
+    onUnblock: (BlockedCall) -> Unit,
     onUnblockAll: () -> Unit,
-    onWhitelist: (PermanentBlockedNumber) -> Unit,
-    onDeletePermanent: (PermanentBlockedNumber) -> Unit,
-    onAddManual: (String) -> Unit
+    onWhitelist: (BlockedCall) -> Unit,
+    onDeletePermanent: (BlockedCall) -> Unit
 ) {
     val context = LocalContext.current
-    var addNumberText by remember { mutableStateOf("") }
     var searchQuery by remember { mutableStateOf("") }
-    var selectedNumberForDetails by remember { mutableStateOf<PermanentBlockedNumber?>(null) }
+    var selectedNumberForDetails by remember { mutableStateOf<BlockedCall?>(null) }
 
     val filteredList = remember(blockedList, searchQuery) {
         if (searchQuery.isBlank()) {
@@ -678,27 +670,6 @@ fun BlockedListScreen(
                 fontWeight = FontWeight.Bold
             )
         }
-
-        // Add Number Input
-        OutlinedTextField(
-            value = addNumberText,
-            onValueChange = { addNumberText = it },
-            label = { Text(stringResource(R.string.add_number_hint)) },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            trailingIcon = {
-                IconButton(onClick = {
-                    if (addNumberText.isNotBlank()) {
-                        onAddManual(addNumberText)
-                        addNumberText = ""
-                    }
-                }) {
-                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_btn))
-                }
-            }
-        )
-
-        Spacer(modifier = Modifier.height(10.dp))
 
         // Search Bar
         OutlinedTextField(

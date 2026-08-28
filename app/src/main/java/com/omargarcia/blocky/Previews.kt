@@ -2,7 +2,7 @@ package com.omargarcia.blocky
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
-import com.omargarcia.blocky.data.PermanentBlockedNumber
+import com.omargarcia.blocky.data.BlockedCall
 import com.omargarcia.blocky.data.WhitelistedNumber
 import com.omargarcia.blocky.ui.theme.BlockyTheme
 
@@ -54,9 +54,9 @@ fun BlockyScreenInactivePreview() {
 @Composable
 fun BlockedListPreview() {
     val mockBlocked = listOf(
-        PermanentBlockedNumber(id = 1, phoneNumber = "+1 555-0101"),
-        PermanentBlockedNumber(id = 2, phoneNumber = "+1 555-0102"),
-        PermanentBlockedNumber(id = 3, phoneNumber = "Unknown")
+        BlockedCall(id = 1, phoneNumber = "+1 555-0101"),
+        BlockedCall(id = 2, phoneNumber = "+1 555-0102"),
+        BlockedCall(id = 3, phoneNumber = "Unknown")
     )
     BlockyTheme {
         BlockedListScreen(
@@ -64,8 +64,7 @@ fun BlockedListPreview() {
             onUnblock = {},
             onUnblockAll = {},
             onWhitelist = {},
-            onDeletePermanent = {},
-            onAddManual = {}
+            onDeletePermanent = {}
         )
     }
 }
