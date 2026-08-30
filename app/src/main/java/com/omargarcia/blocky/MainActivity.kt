@@ -147,16 +147,7 @@ fun MainContainer() {
         }
     }
 
-    val startOfDay = remember {
-        Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }.timeInMillis
-    }
-
-    val blockedCount by blockLogDao.getDailyBlockedCount(startOfDay).collectAsState(initial = 0)
+    val blockedCount by blockLogDao.getTotalBlockedCount().collectAsState(initial = 0)
     val blockedCalls by blockLogDao.getAll().collectAsState(initial = emptyList())
     val whitelist by whitelistDao.getAllWhitelisted().collectAsState(initial = emptyList())
 
