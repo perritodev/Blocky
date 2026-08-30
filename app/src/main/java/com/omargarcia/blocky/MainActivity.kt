@@ -1604,6 +1604,30 @@ fun TroubleshootingScreen(onShowPrivacyPolicy: () -> Unit = {}) {
             Spacer(modifier = Modifier.width(8.dp))
             Text(stringResource(R.string.privacy_policy_title))
         }
+
+        Spacer(modifier = Modifier.height(36.dp))
+
+        val isInPreview = LocalInspectionMode.current
+        val appVersionStr = remember(isInPreview) {
+            if (isInPreview) {
+                "v1.0.10"
+            } else {
+                try {
+                    val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+                    "v${pInfo.versionName} (${pInfo.longVersionCode})"
+                } catch (_: Exception) {
+                    "v1.0.10"
+                }
+            }
+        }
+
+        Text(
+            text = "Blocky $appVersionStr",
+            style = MaterialTheme.typography.labelMedium,
+            color = Color.White.copy(alpha = 0.5f),
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(bottom = 24.dp)
+        )
     }
 }
 
