@@ -37,6 +37,9 @@
     <string name="language_selection">Language / Idioma</string>
     <string name="lang_english">English</string>
     <string name="lang_spanish">Español</string>
+    <string name="sound_effects_toggle">Sound Effects</string>
+    <string name="sound_enabled">Sounds Active</string>
+    <string name="sound_disabled">Sounds Muted</string>
 
     <!-- Onboarding -->
     <string name="welcome_title">Welcome to Blocky</string>

@@ -17,9 +17,18 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateOffsetAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -30,28 +39,41 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
 import androidx.compose.material.icons.automirrored.filled.Help
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
+import kotlin.math.roundToInt
 import com.omargarcia.blocky.data.*
 import com.omargarcia.blocky.ui.theme.BlockyTheme
+import com.omargarcia.blocky.ui.theme.VT323Font
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
+
+val LocalSoundManager = compositionLocalOf<SoundManager?> { null }
 
 class MainActivity : ComponentActivity() {
 
@@ -84,6 +106,15 @@ fun MainContainer() {
     val whitelistDao = remember { db.whitelistedNumberDao() }
     val unblockedDao = remember { db.unblockedNumberDao() }
     val scope = rememberCoroutineScope()
+
+    val soundManager = remember { SoundManager(context) }
+    var isSoundEnabled by remember { mutableStateOf(settingsManager.isSoundEnabled) }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            soundManager.release()
+        }
+    }
 
     var isOnboardingCompleted by remember { mutableStateOf(settingsManager.isOnboardingCompleted) }
     var roleHeldState by remember { mutableStateOf(checkRoleHeld(context)) }
@@ -129,25 +160,34 @@ fun MainContainer() {
     val blockedCalls by blockLogDao.getAll().collectAsState(initial = emptyList())
     val whitelist by whitelistDao.getAllWhitelisted().collectAsState(initial = emptyList())
 
-    Crossfade(targetState = isOnboardingCompleted, label = "ScreenTransition") { completed ->
-        if (completed) {
-            MainContent(
-                roleHeld = roleHeldState,
-                isEnabled = isEnabled,
-                blockedCount = blockedCount,
-                blockedList = blockedCalls,
-                whitelist = whitelist,
-                currentLang = currentLang,
-                onRoleChanged = { roleHeldState = it },
-                onEnabledChanged = {
-                    isEnabled = it
-                    settingsManager.isBlockingEnabled = it
-                },
-                onLanguageChanged = { lang ->
-                    settingsManager.languageCode = lang
-                    currentLang = lang
-                    (context as? ComponentActivity)?.recreate()
-                },
+    CompositionLocalProvider(LocalSoundManager provides soundManager) {
+        Crossfade(targetState = isOnboardingCompleted, label = "ScreenTransition") { completed ->
+            if (completed) {
+                MainContent(
+                    roleHeld = roleHeldState,
+                    isEnabled = isEnabled,
+                    isSoundEnabled = isSoundEnabled,
+                    blockedCount = blockedCount,
+                    blockedList = blockedCalls,
+                    whitelist = whitelist,
+                    currentLang = currentLang,
+                    onRoleChanged = { roleHeldState = it },
+                    onEnabledChanged = {
+                        isEnabled = it
+                        settingsManager.isBlockingEnabled = it
+                    },
+                    onSoundEnabledChanged = {
+                        isSoundEnabled = it
+                        settingsManager.isSoundEnabled = it
+                        if (!it) {
+                            soundManager.stopMusic()
+                        }
+                    },
+                    onLanguageChanged = { lang ->
+                        settingsManager.languageCode = lang
+                        currentLang = lang
+                        (context as? ComponentActivity)?.recreate()
+                    },
                 onUnblockNumber = { numberObj ->
                     scope.launch { 
                         blockLogDao.delete(numberObj)
@@ -197,18 +237,6 @@ fun MainContainer() {
                         Toast.makeText(context, R.string.toast_deleted, Toast.LENGTH_SHORT).show()
                     }
                 },
-                onAddToWhitelistManual = { number ->
-                    scope.launch {
-                        val trimmed = number.trim()
-                        if (trimmed.isNotBlank()) {
-                            unblockedDao.deleteByNumber(trimmed)
-                            permanentBlockDao.deleteByNumber(trimmed)
-                            blockLogDao.deleteByNumber(trimmed)
-                            whitelistDao.insert(WhitelistedNumber(phoneNumber = trimmed))
-                            Toast.makeText(context, R.string.toast_whitelisted, Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                },
                 onRemoveFromWhitelist = { number ->
                     scope.launch { whitelistDao.delete(number) }
                 }
@@ -234,6 +262,7 @@ fun MainContainer() {
         }
     }
 }
+}
 
 @Composable
 fun OnboardingScreen(
@@ -243,6 +272,7 @@ fun OnboardingScreen(
 ) {
     val context = LocalContext.current
     val isInPreview = LocalInspectionMode.current
+    val soundManager = LocalSoundManager.current
     
     var notificationState by remember {
         mutableStateOf(
@@ -283,6 +313,7 @@ fun OnboardingScreen(
             text = { Text(stringResource(R.string.disclosure_contacts_desc)) },
             confirmButton = {
                 Button(onClick = {
+                    soundManager?.playClick()
                     showContactsDisclosure = false
                     permissionLauncher.launch(Manifest.permission.READ_CONTACTS)
                 }) {
@@ -290,7 +321,10 @@ fun OnboardingScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showContactsDisclosure = false }) {
+                TextButton(onClick = {
+                    soundManager?.playClick()
+                    showContactsDisclosure = false
+                }) {
                     Text(stringResource(R.string.disclosure_decline_btn))
                 }
             }
@@ -305,6 +339,7 @@ fun OnboardingScreen(
             text = { Text(stringResource(R.string.disclosure_notifications_desc)) },
             confirmButton = {
                 Button(onClick = {
+                    soundManager?.playClick()
                     showNotificationDisclosure = false
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                         permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -314,7 +349,10 @@ fun OnboardingScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showNotificationDisclosure = false }) {
+                TextButton(onClick = {
+                    soundManager?.playClick()
+                    showNotificationDisclosure = false
+                }) {
                     Text(stringResource(R.string.disclosure_decline_btn))
                 }
             }
@@ -345,10 +383,27 @@ fun OnboardingScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(selected = currentLang == "en", onClick = { onLanguageChanged("en") }, label = { Text(stringResource(R.string.lang_english)) })
-                    FilterChip(selected = currentLang == "es", onClick = { onLanguageChanged("es") }, label = { Text(stringResource(R.string.lang_spanish)) })
+                    FilterChip(
+                        selected = currentLang == "en",
+                        onClick = {
+                            soundManager?.playClick()
+                            onLanguageChanged("en")
+                        },
+                        label = { Text(stringResource(R.string.lang_english)) }
+                    )
+                    FilterChip(
+                        selected = currentLang == "es",
+                        onClick = {
+                            soundManager?.playClick()
+                            onLanguageChanged("es")
+                        },
+                        label = { Text(stringResource(R.string.lang_spanish)) }
+                    )
                 }
-                IconButton(onClick = { showPrivacyPolicyModal = true }) {
+                IconButton(onClick = {
+                    soundManager?.playClick()
+                    showPrivacyPolicyModal = true
+                }) {
                     Icon(Icons.Default.PrivacyTip, contentDescription = stringResource(R.string.privacy_policy_title), tint = MaterialTheme.colorScheme.primary)
                 }
             }
@@ -367,6 +422,7 @@ fun OnboardingScreen(
                 isDone = roleState,
                 btnText = stringResource(R.string.set_default_app),
             ) {
+                soundManager?.playClick()
                 val roleManager = context.getSystemService(Context.ROLE_SERVICE) as? RoleManager
                 roleManager?.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING)?.let { roleLauncher.launch(it) }
             }
@@ -377,6 +433,7 @@ fun OnboardingScreen(
                 isDone = contactsState,
                 btnText = stringResource(R.string.grant_permission),
             ) { 
+                soundManager?.playClick()
                 showContactsDisclosure = true
             }
 
@@ -386,6 +443,7 @@ fun OnboardingScreen(
                 isDone = notificationState,
                 btnText = stringResource(R.string.grant_permission),
             ) { 
+                soundManager?.playClick()
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     showNotificationDisclosure = true
                 }
@@ -397,6 +455,7 @@ fun OnboardingScreen(
                 isDone = batteryState,
                 btnText = stringResource(R.string.grant_permission),
             ) {
+                soundManager?.playClick()
                 val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
                 try {
                     context.startActivity(intent)
@@ -408,14 +467,21 @@ fun OnboardingScreen(
             Spacer(modifier = Modifier.height(10.dp))
             
             Button(
-                onClick = onCompleted,
+                onClick = {
+                    soundManager?.playClick()
+                    soundManager?.playOnboardingTheme()
+                    onCompleted()
+                },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = roleState
             ) {
                 Text(text = if (roleState && contactsState) stringResource(R.string.setup_complete) else stringResource(R.string.get_started))
             }
 
-            TextButton(onClick = { showPrivacyPolicyModal = true }) {
+            TextButton(onClick = {
+                soundManager?.playClick()
+                showPrivacyPolicyModal = true
+            }) {
                 Text(stringResource(R.string.privacy_policy_btn), fontSize = 12.sp)
             }
         }
@@ -447,17 +513,108 @@ fun OnboardingStep(title: String, desc: String, isDone: Boolean, btnText: String
     }
 }
 
+@Composable
+fun rememberParallaxOffset(maxOffsetPx: Float = 45f): State<Offset> {
+    val context = LocalContext.current
+    val isInPreview = LocalInspectionMode.current
+    val targetOffset = remember { mutableStateOf(Offset.Zero) }
+
+    if (!isInPreview) {
+        DisposableEffect(Unit) {
+            val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as? SensorManager
+            val rotationSensor = sensorManager?.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
+            val accelSensor = if (rotationSensor == null) {
+                sensorManager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+            } else null
+
+            val listener = object : SensorEventListener {
+                private val rotationMatrix = FloatArray(9)
+                private val orientation = FloatArray(3)
+                private var baselinePitch = Float.NaN
+                private var baselineRoll = Float.NaN
+
+                override fun onSensorChanged(event: SensorEvent) {
+                    when (event.sensor.type) {
+                        Sensor.TYPE_ROTATION_VECTOR -> {
+                            SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
+                            SensorManager.getOrientation(rotationMatrix, orientation)
+                            val pitch = orientation[1]
+                            val roll = orientation[2]
+
+                            if (baselinePitch.isNaN()) {
+                                baselinePitch = pitch
+                                baselineRoll = roll
+                            } else {
+                                baselinePitch += (pitch - baselinePitch) * 0.003f
+                                baselineRoll += (roll - baselineRoll) * 0.003f
+                            }
+
+                            val diffRoll = (roll - baselineRoll).coerceIn(-0.45f, 0.45f)
+                            val diffPitch = (pitch - baselinePitch).coerceIn(-0.45f, 0.45f)
+
+                            val x = -diffRoll * (maxOffsetPx / 0.45f)
+                            val y = -diffPitch * (maxOffsetPx / 0.45f)
+                            targetOffset.value = Offset(x, y)
+                        }
+                        Sensor.TYPE_ACCELEROMETER -> {
+                            val rawX = event.values[0]
+                            val rawY = event.values[1]
+
+                            if (baselineRoll.isNaN()) {
+                                baselineRoll = rawX
+                                baselinePitch = rawY
+                            } else {
+                                baselineRoll += (rawX - baselineRoll) * 0.003f
+                                baselinePitch += (rawY - baselinePitch) * 0.003f
+                            }
+
+                            val diffX = (rawX - baselineRoll).coerceIn(-4.0f, 4.0f)
+                            val diffY = (rawY - baselinePitch).coerceIn(-4.0f, 4.0f)
+
+                            val x = diffX * (maxOffsetPx / 4.0f)
+                            val y = -diffY * (maxOffsetPx / 4.0f)
+                            targetOffset.value = Offset(x, y)
+                        }
+                    }
+                }
+
+                override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+            }
+
+            val activeSensor = rotationSensor ?: accelSensor
+            if (activeSensor != null) {
+                sensorManager?.registerListener(listener, activeSensor, SensorManager.SENSOR_DELAY_GAME)
+            }
+
+            onDispose {
+                sensorManager?.unregisterListener(listener)
+            }
+        }
+    }
+
+    return animateOffsetAsState(
+        targetValue = targetOffset.value,
+        animationSpec = spring(
+            stiffness = Spring.StiffnessLow,
+            dampingRatio = Spring.DampingRatioNoBouncy
+        ),
+        label = "ParallaxOffset"
+    )
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainContent(
     roleHeld: Boolean,
     isEnabled: Boolean,
+    isSoundEnabled: Boolean,
     blockedCount: Int,
     blockedList: List<BlockedCall>,
     whitelist: List<WhitelistedNumber>,
     currentLang: String,
     onRoleChanged: (Boolean) -> Unit,
     onEnabledChanged: (Boolean) -> Unit,
+    onSoundEnabledChanged: (Boolean) -> Unit,
     onLanguageChanged: (String) -> Unit,
     onUnblockNumber: (BlockedCall) -> Unit,
     onUnblockAll: () -> Unit,
@@ -465,13 +622,14 @@ fun MainContent(
     onAddToBlockedFromWhitelist: (WhitelistedNumber) -> Unit,
     onDeleteBlockedPermanent: (BlockedCall) -> Unit,
     onDeleteWhitelistPermanent: (WhitelistedNumber) -> Unit,
-    onAddToWhitelistManual: (String) -> Unit,
     onRemoveFromWhitelist: (WhitelistedNumber) -> Unit,
     onFinishOnboarding: () -> Unit,
 ) {
+    val parallaxOffset by rememberParallaxOffset(maxOffsetPx = 45f)
     var selectedTab by remember { mutableIntStateOf(0) }
     val context = LocalContext.current
     val isInPreview = LocalInspectionMode.current
+    val soundManager = LocalSoundManager.current
     var showPrivacyPolicyModal by remember { mutableStateOf(false) }
     
     val isSetupIncomplete = !roleHeld || (!isInPreview && !checkPermission(context, Manifest.permission.READ_CONTACTS))
@@ -480,13 +638,58 @@ fun MainContent(
         PrivacyPolicyDialog(onDismiss = { showPrivacyPolicyModal = false })
     }
 
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text(stringResource(R.string.app_name)) },
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        Image(
+            painter = painterResource(R.drawable.bg_app_pattern),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .fillMaxSize()
+                .scale(1.22f)
+                .offset { IntOffset(parallaxOffset.x.roundToInt(), parallaxOffset.y.roundToInt()) },
+            alpha = 0.09f
+        )
+
+        Scaffold(
+            containerColor = Color.Transparent,
+            modifier = Modifier.fillMaxSize(),
+            topBar = {
+                CenterAlignedTopAppBar(
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent
+                    ),
+                    title = {
+                        Text(
+                            text = stringResource(R.string.app_name),
+                            fontFamily = VT323Font,
+                            fontSize = 26.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                navigationIcon = {
+                    IconButton(onClick = {
+                        val newSoundState = !isSoundEnabled
+                        onSoundEnabledChanged(newSoundState)
+                        if (newSoundState) {
+                            soundManager?.playClick()
+                        }
+                    }) {
+                        Icon(
+                            imageVector = if (isSoundEnabled) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
+                            contentDescription = stringResource(if (isSoundEnabled) R.string.sound_enabled else R.string.sound_disabled),
+                            tint = if (isSoundEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+                        )
+                    }
+                },
                 actions = {
-                    IconButton(onClick = { showPrivacyPolicyModal = true }) {
+                    IconButton(onClick = {
+                        soundManager?.playClick()
+                        showPrivacyPolicyModal = true
+                    }) {
                         Icon(Icons.Default.PrivacyTip, contentDescription = stringResource(R.string.privacy_policy_title))
                     }
                     val isProtectionActive = roleHeld && isEnabled
@@ -500,10 +703,42 @@ fun MainContent(
         },
         bottomBar = {
             NavigationBar {
-                NavigationBarItem(icon = { Icon(Icons.Default.Shield, null) }, label = { Text(stringResource(R.string.protection_tab)) }, selected = selectedTab == 0, onClick = { selectedTab = 0 })
-                NavigationBarItem(icon = { Icon(Icons.Default.Block, null) }, label = { Text(stringResource(R.string.blocked_list_tab)) }, selected = selectedTab == 1, onClick = { selectedTab = 1 })
-                NavigationBarItem(icon = { Icon(Icons.AutoMirrored.Filled.FormatListBulleted, null) }, label = { Text(stringResource(R.string.whitelist_tab)) }, selected = selectedTab == 2, onClick = { selectedTab = 2 })
-                NavigationBarItem(icon = { Icon(Icons.AutoMirrored.Filled.Help, null) }, label = { Text(stringResource(R.string.support_tab)) }, selected = selectedTab == 3, onClick = { selectedTab = 3 })
+                NavigationBarItem(
+                    icon = { Icon(Icons.Default.Shield, null) },
+                    label = { Text(stringResource(R.string.protection_tab)) },
+                    selected = selectedTab == 0,
+                    onClick = {
+                        soundManager?.playClick()
+                        selectedTab = 0
+                    }
+                )
+                NavigationBarItem(
+                    icon = { Icon(Icons.Default.Block, null) },
+                    label = { Text(stringResource(R.string.blocked_list_tab)) },
+                    selected = selectedTab == 1,
+                    onClick = {
+                        soundManager?.playClick()
+                        selectedTab = 1
+                    }
+                )
+                NavigationBarItem(
+                    icon = { Icon(Icons.AutoMirrored.Filled.FormatListBulleted, null) },
+                    label = { Text(stringResource(R.string.whitelist_tab)) },
+                    selected = selectedTab == 2,
+                    onClick = {
+                        soundManager?.playClick()
+                        selectedTab = 2
+                    }
+                )
+                NavigationBarItem(
+                    icon = { Icon(Icons.AutoMirrored.Filled.Help, null) },
+                    label = { Text(stringResource(R.string.support_tab)) },
+                    selected = selectedTab == 3,
+                    onClick = {
+                        soundManager?.playClick()
+                        selectedTab = 3
+                    }
+                )
             }
         },
     ) { innerPadding ->
@@ -523,7 +758,12 @@ fun MainContent(
                         Surface(color = MaterialTheme.colorScheme.errorContainer, modifier = Modifier.fillMaxWidth()) {
                             Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Text(text = stringResource(R.string.missing_setup_warning), modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelSmall)
-                                TextButton(onClick = onFinishOnboarding) { Text(stringResource(R.string.finish_setup_btn)) }
+                                TextButton(onClick = {
+                                    soundManager?.playClick()
+                                    onFinishOnboarding()
+                                }) {
+                                    Text(stringResource(R.string.finish_setup_btn))
+                                }
                             }
                         }
                     }
@@ -550,16 +790,19 @@ fun MainContent(
                                 whitelist = whitelist,
                                 onRemove = onRemoveFromWhitelist,
                                 onDeletePermanent = onDeleteWhitelistPermanent,
-                                onBlockNumber = onAddToBlockedFromWhitelist,
-                                onAddManual = onAddToWhitelistManual
+                                onBlockNumber = onAddToBlockedFromWhitelist
                             )
-                            3 -> TroubleshootingScreen(onShowPrivacyPolicy = { showPrivacyPolicyModal = true })
+                            3 -> TroubleshootingScreen(onShowPrivacyPolicy = {
+                                soundManager?.playClick()
+                                showPrivacyPolicyModal = true
+                            })
                         }
                     }
                 }
             }
         }
     }
+}
 }
 
 @Composable
@@ -574,6 +817,7 @@ fun BlockyScreen(
     blockedCount: Int = 0,
 ) {
     val context = LocalContext.current
+    val soundManager = LocalSoundManager.current
     val roleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { _ ->
         onRoleChanged(checkRoleHeld(context))
     }
@@ -586,45 +830,102 @@ fun BlockyScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
-                .padding(24.dp),
+                .padding(horizontal = 20.dp, vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(text = stringResource(R.string.app_name), fontSize = 48.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+            Image(
+                painter = painterResource(R.drawable.ic_blocky_logo),
+                contentDescription = stringResource(R.string.app_name),
+                modifier = Modifier
+                    .size(112.dp)
+                    .clip(RoundedCornerShape(26.dp))
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = stringResource(R.string.app_name),
+                fontSize = 46.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = VT323Font,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = if (isRoleHeldInitial) stringResource(R.string.protection_active) else stringResource(R.string.protection_inactive),
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = blockedCount.toString(),
+                fontSize = 76.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = VT323Font,
+                color = MaterialTheme.colorScheme.secondary
+            )
+            Text(
+                text = stringResource(R.string.calls_blocked_label),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f)
+            )
             Spacer(modifier = Modifier.height(16.dp))
-            Text(text = if (isRoleHeldInitial) stringResource(R.string.protection_active) else stringResource(R.string.protection_inactive), textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyLarge)
-            Spacer(modifier = Modifier.height(24.dp))
-            Text(text = blockedCount.toString(), fontSize = 64.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.secondary)
-            Text(text = stringResource(R.string.calls_blocked_label), style = MaterialTheme.typography.labelLarge)
-            Spacer(modifier = Modifier.height(48.dp))
 
             Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = if (isRoleHeldInitial && isEnabledInitial) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer)) {
-                Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = if (isRoleHeldInitial && isEnabledInitial) stringResource(R.string.shield_active) else stringResource(R.string.shield_down), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
-                    Text(text = when { !isRoleHeldInitial -> stringResource(R.string.shield_down_desc) !isEnabledInitial -> stringResource(R.string.service_disabled) else -> stringResource(R.string.shield_active_desc) }, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                Column(modifier = Modifier.padding(14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(text = if (isRoleHeldInitial && isEnabledInitial) stringResource(R.string.shield_active) else stringResource(R.string.shield_down), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                    Text(text = when { !isRoleHeldInitial -> stringResource(R.string.shield_down_desc) !isEnabledInitial -> stringResource(R.string.service_disabled) else -> stringResource(R.string.shield_active_desc) }, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodySmall, modifier = Modifier.fillMaxWidth())
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             if (isRoleHeldInitial) {
                 Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(text = if (isEnabledInitial) stringResource(R.string.service_enabled) else stringResource(R.string.service_disabled), style = MaterialTheme.typography.titleMedium)
-                    Switch(checked = isEnabledInitial, onCheckedChange = onEnabledChanged)
+                    Text(
+                        text = if (isEnabledInitial) stringResource(R.string.service_enabled) else stringResource(R.string.service_disabled),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Switch(
+                        checked = isEnabledInitial,
+                        onCheckedChange = {
+                            soundManager?.playClick()
+                            onEnabledChanged(it)
+                        }
+                    )
                 }
             } else {
-                Button(onClick = {
-                    val roleManager = context.getSystemService(Context.ROLE_SERVICE) as? RoleManager
-                    roleManager?.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING)?.let { roleLauncher.launch(it) }
-                }, modifier = Modifier.fillMaxWidth()) {
+                Button(
+                    onClick = {
+                        soundManager?.playClick()
+                        val roleManager = context.getSystemService(Context.ROLE_SERVICE) as? RoleManager
+                        roleManager?.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING)?.let { roleLauncher.launch(it) }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     Text(text = stringResource(R.string.enable_protection_btn))
                 }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             Text(text = stringResource(R.string.language_selection), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Row(modifier = Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                FilterChip(selected = currentLang == "en", onClick = { onLanguageChanged("en") }, label = { Text(stringResource(R.string.lang_english)) })
-                FilterChip(selected = currentLang == "es", onClick = { onLanguageChanged("es") }, label = { Text(stringResource(R.string.lang_spanish)) })
+            Row(modifier = Modifier.padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                FilterChip(
+                    selected = currentLang == "en",
+                    onClick = {
+                        soundManager?.playClick()
+                        onLanguageChanged("en")
+                    },
+                    label = { Text(stringResource(R.string.lang_english)) }
+                )
+                FilterChip(
+                    selected = currentLang == "es",
+                    onClick = {
+                        soundManager?.playClick()
+                        onLanguageChanged("es")
+                    },
+                    label = { Text(stringResource(R.string.lang_spanish)) }
+                )
             }
         }
     }
@@ -639,6 +940,7 @@ fun BlockedListScreen(
     onDeletePermanent: (BlockedCall) -> Unit
 ) {
     val context = LocalContext.current
+    val soundManager = LocalSoundManager.current
     var searchQuery by remember { mutableStateOf("") }
     var selectedNumberForDetails by remember { mutableStateOf<BlockedCall?>(null) }
     var showUnblockAllDialog by remember { mutableStateOf(false) }
@@ -667,6 +969,7 @@ fun BlockedListScreen(
             confirmButton = {
                 Button(
                     onClick = {
+                        soundManager?.playClick()
                         showUnblockAllDialog = false
                         onUnblockAll()
                     },
@@ -676,7 +979,10 @@ fun BlockedListScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showUnblockAllDialog = false }) {
+                TextButton(onClick = {
+                    soundManager?.playClick()
+                    showUnblockAllDialog = false
+                }) {
                     Text(stringResource(R.string.cancel_btn))
                 }
             }
@@ -705,12 +1011,13 @@ fun BlockedListScreen(
                 imageVector = Icons.Default.Block,
                 contentDescription = null,
                 modifier = Modifier.size(32.dp),
-                tint = MaterialTheme.colorScheme.primary
+                tint = Color.White
             )
             Text(
                 text = stringResource(R.string.blocked_numbers_title),
                 style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = Color.White
             )
         }
 
@@ -722,7 +1029,10 @@ fun BlockedListScreen(
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
             trailingIcon = {
                 if (searchQuery.isNotBlank()) {
-                    IconButton(onClick = { searchQuery = "" }) {
+                    IconButton(onClick = {
+                        soundManager?.playClick()
+                        searchQuery = ""
+                    }) {
                         Icon(Icons.Default.Close, contentDescription = stringResource(R.string.clear_search))
                     }
                 }
@@ -736,7 +1046,10 @@ fun BlockedListScreen(
 
         if (blockedList.isNotEmpty() && searchQuery.isBlank()) {
             Button(
-                onClick = { showUnblockAllDialog = true },
+                onClick = {
+                    soundManager?.playClick()
+                    showUnblockAllDialog = true
+                },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.errorContainer,
@@ -793,7 +1106,10 @@ fun BlockedListScreen(
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { selectedNumberForDetails = number }
+                                .clickable {
+                                    soundManager?.playClick()
+                                    selectedNumberForDetails = number
+                                }
                         ) {
                             Row(
                                 modifier = Modifier.padding(12.dp),
@@ -809,14 +1125,20 @@ fun BlockedListScreen(
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         text = number.phoneNumber,
-                                        style = MaterialTheme.typography.titleMedium,
+                                        style = MaterialTheme.typography.titleMedium.copy(fontFamily = FontFamily.Default),
                                         fontWeight = FontWeight.SemiBold
                                     )
                                 }
-                                IconButton(onClick = { onWhitelist(number) }) {
+                                IconButton(onClick = {
+                                    soundManager?.playClick()
+                                    onWhitelist(number)
+                                }) {
                                     Icon(Icons.Default.Check, contentDescription = stringResource(R.string.action_whitelist), tint = Color(0xFF4CAF50))
                                 }
-                                IconButton(onClick = { onUnblock(number) }) {
+                                IconButton(onClick = {
+                                    soundManager?.playClick()
+                                    onUnblock(number)
+                                }) {
                                     Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.action_remove_from_list), tint = MaterialTheme.colorScheme.error)
                                 }
                             }
@@ -846,10 +1168,10 @@ fun WhitelistScreen(
     whitelist: List<WhitelistedNumber>,
     onRemove: (WhitelistedNumber) -> Unit,
     onDeletePermanent: (WhitelistedNumber) -> Unit,
-    onBlockNumber: (WhitelistedNumber) -> Unit,
-    onAddManual: (String) -> Unit = {}
+    onBlockNumber: (WhitelistedNumber) -> Unit
 ) {
     val context = LocalContext.current
+    val soundManager = LocalSoundManager.current
     var searchQuery by remember { mutableStateOf("") }
     var selectedNumberForDetails by remember { mutableStateOf<WhitelistedNumber?>(null) }
 
@@ -871,12 +1193,13 @@ fun WhitelistScreen(
                 imageVector = Icons.AutoMirrored.Filled.FormatListBulleted,
                 contentDescription = null,
                 modifier = Modifier.size(32.dp),
-                tint = MaterialTheme.colorScheme.primary
+                tint = Color.White
             )
             Text(
                 text = stringResource(R.string.whitelist_title),
                 style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = Color.White
             )
         }
 
@@ -888,7 +1211,10 @@ fun WhitelistScreen(
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
             trailingIcon = {
                 if (searchQuery.isNotBlank()) {
-                    IconButton(onClick = { searchQuery = "" }) {
+                    IconButton(onClick = {
+                        soundManager?.playClick()
+                        searchQuery = ""
+                    }) {
                         Icon(Icons.Default.Close, contentDescription = stringResource(R.string.clear_search))
                     }
                 }
@@ -927,7 +1253,10 @@ fun WhitelistScreen(
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { selectedNumberForDetails = number }
+                            .clickable {
+                                soundManager?.playClick()
+                                selectedNumberForDetails = number
+                            }
                     ) {
                         Row(
                             modifier = Modifier.padding(12.dp),
@@ -943,11 +1272,14 @@ fun WhitelistScreen(
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = number.phoneNumber,
-                                    style = MaterialTheme.typography.titleMedium,
+                                    style = MaterialTheme.typography.titleMedium.copy(fontFamily = FontFamily.Default),
                                     fontWeight = FontWeight.SemiBold
                                 )
                             }
-                            IconButton(onClick = { onRemove(number) }) {
+                            IconButton(onClick = {
+                                soundManager?.playClick()
+                                onRemove(number)
+                            }) {
                                 Icon(Icons.Default.Close, contentDescription = stringResource(R.string.remove_from_whitelist), tint = MaterialTheme.colorScheme.error)
                             }
                         }
@@ -984,6 +1316,7 @@ fun CallerDetailBottomSheet(
     onAddToContacts: (String) -> Unit,
 ) {
     val context = LocalContext.current
+    val soundManager = LocalSoundManager.current
     val metadataHelper = remember { PhoneNumberMetadataHelper(context) }
     val details = remember(phoneNumber) { metadataHelper.getNumberDetails(phoneNumber) }
     val dateStr = remember(timestamp) {
@@ -1016,6 +1349,7 @@ fun CallerDetailBottomSheet(
             confirmButton = {
                 Button(
                     onClick = {
+                        soundManager?.playClick()
                         showDeleteConfirmDialog = false
                         onDeletePermanent()
                         onDismiss()
@@ -1026,7 +1360,10 @@ fun CallerDetailBottomSheet(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteConfirmDialog = false }) {
+                TextButton(onClick = {
+                    soundManager?.playClick()
+                    showDeleteConfirmDialog = false
+                }) {
                     Text(stringResource(R.string.cancel_btn))
                 }
             }
@@ -1053,7 +1390,7 @@ fun CallerDetailBottomSheet(
 
             Text(
                 text = details.formattedNational.ifBlank { details.rawNumber },
-                style = MaterialTheme.typography.headlineSmall,
+                style = MaterialTheme.typography.headlineSmall.copy(fontFamily = FontFamily.Default),
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
             )
@@ -1061,7 +1398,7 @@ fun CallerDetailBottomSheet(
             if (details.formattedInternational.isNotBlank() && details.formattedInternational != details.formattedNational) {
                 Text(
                     text = details.formattedInternational,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Default),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 2.dp)
                 )
@@ -1105,6 +1442,7 @@ fun CallerDetailBottomSheet(
             // Action Buttons
             Button(
                 onClick = {
+                    soundManager?.playClick()
                     onAddToContacts(details.formattedNational.ifBlank { details.rawNumber })
                     onDismiss()
                 },
@@ -1120,6 +1458,7 @@ fun CallerDetailBottomSheet(
 
             OutlinedButton(
                 onClick = {
+                    soundManager?.playClick()
                     onToggleList()
                     onDismiss()
                 },
@@ -1141,6 +1480,7 @@ fun CallerDetailBottomSheet(
 
             OutlinedButton(
                 onClick = {
+                    soundManager?.playClick()
                     onRemoveFromList()
                     onDismiss()
                 },
@@ -1155,6 +1495,7 @@ fun CallerDetailBottomSheet(
 
             TextButton(
                 onClick = {
+                    soundManager?.playClick()
                     showDeleteConfirmDialog = true
                 },
                 colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
@@ -1214,6 +1555,7 @@ fun TroubleshootingScreen(onShowPrivacyPolicy: () -> Unit = {}) {
             text = stringResource(R.string.support_title),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
+            color = Color.White,
             modifier = Modifier.padding(bottom = 8.dp)
         )
         Text(
@@ -1460,8 +1802,7 @@ fun WhitelistPreview() {
             whitelist = mockWhitelist,
             onRemove = {},
             onDeletePermanent = {},
-            onBlockNumber = {},
-            onAddManual = {}
+            onBlockNumber = {}
         )
     }
 }

@@ -34,9 +34,12 @@
     <string name="notification_title">Blocky está protegiendo tu teléfono</string>
     <string name="notification_text">El servicio de bloqueo de llamadas está activo.</string>
 
-    <string name="language_selection">Idioma / Language</string>
+    <string name="language_selection">Language / Idioma</string>
     <string name="lang_english">English</string>
     <string name="lang_spanish">Español</string>
+    <string name="sound_effects_toggle">Efectos de Sonido</string>
+    <string name="sound_enabled">Sonidos Activados</string>
+    <string name="sound_disabled">Sonidos Silenciados</string>
 
     <!-- Onboarding -->
     <string name="welcome_title">Bienvenido a Blocky</string>

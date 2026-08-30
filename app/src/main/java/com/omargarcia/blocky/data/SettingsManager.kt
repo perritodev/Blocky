@@ -35,9 +35,16 @@ class SettingsManager(context: Context) {
             prefs.edit { putBoolean(KEY_ONBOARDING_COMPLETED, value) }
         }
 
+    var isSoundEnabled: Boolean
+        get() = prefs.getBoolean(KEY_SOUND_ENABLED, true)
+        set(value) {
+            prefs.edit { putBoolean(KEY_SOUND_ENABLED, value) }
+        }
+
     companion object {
         private const val KEY_BLOCKING_ENABLED = "blocking_enabled"
         private const val KEY_LANGUAGE_CODE = "language_code"
         private const val KEY_ONBOARDING_COMPLETED = "onboarding_completed"
+        private const val KEY_SOUND_ENABLED = "sound_enabled"
     }
 }

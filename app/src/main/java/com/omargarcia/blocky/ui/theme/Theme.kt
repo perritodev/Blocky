@@ -49,7 +49,7 @@ fun BlockyTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography,
+        typography = PixelTypography,
         content = content,
     )
 }
