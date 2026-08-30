@@ -41,10 +41,17 @@ class SettingsManager(context: Context) {
             prefs.edit { putBoolean(KEY_SOUND_ENABLED, value) }
         }
 
+    var repeatCallThreshold: Int
+        get() = prefs.getInt(KEY_REPEAT_CALL_THRESHOLD, 1)
+        set(value) {
+            prefs.edit { putInt(KEY_REPEAT_CALL_THRESHOLD, value) }
+        }
+
     companion object {
         private const val KEY_BLOCKING_ENABLED = "blocking_enabled"
         private const val KEY_LANGUAGE_CODE = "language_code"
         private const val KEY_ONBOARDING_COMPLETED = "onboarding_completed"
         private const val KEY_SOUND_ENABLED = "sound_enabled"
+        private const val KEY_REPEAT_CALL_THRESHOLD = "repeat_call_threshold"
     }
 }

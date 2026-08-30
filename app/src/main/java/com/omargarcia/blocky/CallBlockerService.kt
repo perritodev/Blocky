@@ -74,7 +74,20 @@ class CallBlockerService : CallScreeningService() {
                 return@launch
             }
 
-            // 5. Unknown caller not in contacts or whitelist -> Block
+            // 5. Check repeat caller threshold (if configured > 1)
+            val threshold = settingsManager.repeatCallThreshold
+            if (threshold > 1) {
+                val fifteenMinutesAgo = System.currentTimeMillis() - (15 * 60 * 1000L)
+                val recentBlockedCalls = historyDao.getBlockedCallsSinceList(fifteenMinutesAgo)
+                val recentMatchingCount = countMatchingCalls(rawNumber, normalizedNumber, recentBlockedCalls)
+                val totalAttempts = recentMatchingCount + 1
+                if (totalAttempts >= threshold) {
+                    allowCall(callDetails)
+                    return@launch
+                }
+            }
+
+            // 6. Unknown caller not in contacts or whitelist -> Block
             blockCall(callDetails, rawNumber, historyDao)
         }
     }
@@ -151,6 +164,24 @@ class CallBlockerService : CallScreeningService() {
             cursor?.close()
         }
         return false
+    }
+
+    @Suppress("DEPRECATION")
+    private fun countMatchingCalls(rawNumber: String, normalizedNumber: String, calls: List<BlockedCall>): Int {
+        var count = 0
+        for (call in calls) {
+            val item = call.phoneNumber
+            val normalizedItem = PhoneNumberUtils.normalizeNumber(item)
+            if (item == rawNumber || 
+                (normalizedNumber.isNotEmpty() && item == normalizedNumber) ||
+                (normalizedItem.isNotEmpty() && normalizedItem == normalizedNumber) ||
+                PhoneNumberUtils.compare(this, rawNumber, item) ||
+                (normalizedNumber.isNotEmpty() && PhoneNumberUtils.compare(this, normalizedNumber, item))
+            ) {
+                count++
+            }
+        }
+        return count
     }
 }
 

@@ -41,6 +41,18 @@
     <string name="sound_enabled">Sonidos Activados</string>
     <string name="sound_disabled">Sonidos Silenciados</string>
 
+    <string name="repeat_call_threshold_title">Umbral de Llamadas Permitidas</string>
+    <string name="repeat_call_threshold_desc">Permitir que un número desconocido suene si llama repetidamente en 15 min.</string>
+    <string name="threshold_always_block">Siempre Bloquear</string>
+    <string name="threshold_n_calls">%d Llamadas</string>
+    <string name="threshold_custom_btn">Personalizado (%d Llamadas)</string>
+    <string name="threshold_set_custom_btn">Personalizar Número</string>
+    <string name="custom_threshold_dialog_title">Personalizar Umbral de Llamadas</string>
+    <string name="custom_threshold_dialog_desc">Ingresa cuántas veces debe llamar un número desconocido en 15 minutos para permitir que suene:</string>
+    <string name="custom_threshold_hint">Número de llamadas (ej. 2, 3, 5)</string>
+    <string name="save_btn">Guardar</string>
+    <string name="toast_invalid_threshold">Ingresa un número válido (2 o más)</string>
+
     <!-- Onboarding -->
     <string name="welcome_title">Bienvenido a Blocky</string>
     <string name="welcome_desc">Tu escudo personal contra llamadas desconocidas y no registradas.</string>
@@ -77,7 +89,7 @@
     <string name="add_btn">Añadir</string>
     <string name="action_whitelist">Permitir</string>
     <string name="action_block">Bloquear</string>
-    <string name="search_hint">Buscar número o fecha...</string>
+    <string name="search_hint">Buscar número o fecha&#8230;</string>
     <string name="clear_search">Limpiar búsqueda</string>
     <string name="no_results_found">No se encontraron números coincidentes.</string>
     <string name="group_today">Hoy</string>

@@ -36,6 +36,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
 import androidx.compose.material.icons.automirrored.filled.Help
@@ -120,6 +123,7 @@ fun MainContainer() {
     var roleHeldState by remember { mutableStateOf(checkRoleHeld(context)) }
     var isEnabled by remember { mutableStateOf(settingsManager.isBlockingEnabled) }
     var currentLang by remember { mutableStateOf(settingsManager.languageCode) }
+    var repeatCallThreshold by remember { mutableIntStateOf(settingsManager.repeatCallThreshold) }
     
     val isProtectionActive = roleHeldState && isEnabled
 
@@ -162,6 +166,7 @@ fun MainContainer() {
                     blockedList = blockedCalls,
                     whitelist = whitelist,
                     currentLang = currentLang,
+                    repeatCallThreshold = repeatCallThreshold,
                     onRoleChanged = { roleHeldState = it },
                     onEnabledChanged = {
                         isEnabled = it
@@ -178,6 +183,10 @@ fun MainContainer() {
                         settingsManager.languageCode = lang
                         currentLang = lang
                         (context as? ComponentActivity)?.recreate()
+                    },
+                    onThresholdChanged = { threshold ->
+                        repeatCallThreshold = threshold
+                        settingsManager.repeatCallThreshold = threshold
                     },
                 onUnblockNumber = { numberObj ->
                     scope.launch { 
@@ -603,10 +612,12 @@ fun MainContent(
     blockedList: List<BlockedCall>,
     whitelist: List<WhitelistedNumber>,
     currentLang: String,
+    repeatCallThreshold: Int = 1,
     onRoleChanged: (Boolean) -> Unit,
     onEnabledChanged: (Boolean) -> Unit,
     onSoundEnabledChanged: (Boolean) -> Unit,
     onLanguageChanged: (String) -> Unit,
+    onThresholdChanged: (Int) -> Unit = {},
     onUnblockNumber: (BlockedCall) -> Unit,
     onUnblockAll: () -> Unit,
     onAddToWhitelistFromBlocked: (BlockedCall) -> Unit,
@@ -770,6 +781,8 @@ fun MainContent(
                                 onEnabledChanged = onEnabledChanged,
                                 currentLang = currentLang,
                                 onLanguageChanged = onLanguageChanged,
+                                repeatCallThreshold = repeatCallThreshold,
+                                onThresholdChanged = onThresholdChanged,
                             )
                             1 -> BlockedListScreen(
                                 blockedList = blockedList,
@@ -807,11 +820,79 @@ fun BlockyScreen(
     currentLang: String,
     onLanguageChanged: (String) -> Unit,
     blockedCount: Int = 0,
+    repeatCallThreshold: Int = 1,
+    onThresholdChanged: (Int) -> Unit = {},
 ) {
     val context = LocalContext.current
     val soundManager = LocalSoundManager.current
     val roleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { _ ->
         onRoleChanged(checkRoleHeld(context))
+    }
+    var showCustomThresholdDialog by remember { mutableStateOf(false) }
+    var customInputText by remember { mutableStateOf("") }
+
+    if (showCustomThresholdDialog) {
+        AlertDialog(
+            onDismissRequest = { showCustomThresholdDialog = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            },
+            title = {
+                Text(
+                    text = stringResource(R.string.custom_threshold_dialog_title),
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        text = stringResource(R.string.custom_threshold_dialog_desc),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    OutlinedTextField(
+                        value = customInputText,
+                        onValueChange = { input ->
+                            if (input.all { it.isDigit() } && input.length <= 3) {
+                                customInputText = input
+                            }
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        placeholder = { Text(stringResource(R.string.custom_threshold_hint)) },
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val num = customInputText.toIntOrNull()
+                        if (num != null && num >= 2) {
+                            soundManager?.playClick()
+                            onThresholdChanged(num)
+                            showCustomThresholdDialog = false
+                        } else {
+                            Toast.makeText(context, R.string.toast_invalid_threshold, Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                ) {
+                    Text(stringResource(R.string.save_btn))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    soundManager?.playClick()
+                    showCustomThresholdDialog = false
+                }) {
+                    Text(stringResource(R.string.cancel_btn))
+                }
+            }
+        )
     }
 
     Box(
@@ -820,104 +901,239 @@ fun BlockyScreen(
     ) {
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 8.dp),
+                .fillMaxSize()
+                .padding(horizontal = 18.dp, vertical = 6.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Image(
-                painter = painterResource(R.drawable.ic_blocky_logo),
-                contentDescription = stringResource(R.string.app_name),
-                modifier = Modifier
-                    .size(112.dp)
-                    .clip(RoundedCornerShape(26.dp))
-            )
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(
-                text = stringResource(R.string.app_name),
-                fontSize = 46.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = VT323Font,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = if (isRoleHeldInitial) stringResource(R.string.protection_active) else stringResource(R.string.protection_inactive),
-                textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(
-                text = blockedCount.toString(),
-                fontSize = 76.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = VT323Font,
-                color = MaterialTheme.colorScheme.secondary
-            )
-            Text(
-                text = stringResource(R.string.calls_blocked_label),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f)
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = if (isRoleHeldInitial && isEnabledInitial) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer)) {
-                Column(modifier = Modifier.padding(14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = if (isRoleHeldInitial && isEnabledInitial) stringResource(R.string.shield_active) else stringResource(R.string.shield_down), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
-                    Text(text = when { !isRoleHeldInitial -> stringResource(R.string.shield_down_desc) !isEnabledInitial -> stringResource(R.string.service_disabled) else -> stringResource(R.string.shield_active_desc) }, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodySmall, modifier = Modifier.fillMaxWidth())
-                }
+            // Top Section: Logo + App Name + Subtitle
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.ic_blocky_logo),
+                    contentDescription = stringResource(R.string.app_name),
+                    modifier = Modifier
+                        .size(64.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = stringResource(R.string.app_name),
+                    fontSize = 36.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = VT323Font,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = if (isRoleHeldInitial) stringResource(R.string.protection_active) else stringResource(R.string.protection_inactive),
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.85f)
+                )
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
+            // Hero Center Section: Big Blocked Counter
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = blockedCount.toString(),
+                    fontSize = 58.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = VT323Font,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+                Text(
+                    text = stringResource(R.string.calls_blocked_label),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f)
+                )
+            }
 
-            if (isRoleHeldInitial) {
-                Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(
-                        text = if (isEnabledInitial) stringResource(R.string.service_enabled) else stringResource(R.string.service_disabled),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    Switch(
-                        checked = isEnabledInitial,
-                        onCheckedChange = {
-                            soundManager?.playClick()
-                            onEnabledChanged(it)
-                        }
-                    )
-                }
-            } else {
-                Button(
-                    onClick = {
-                        soundManager?.playClick()
-                        val roleManager = context.getSystemService(Context.ROLE_SERVICE) as? RoleManager
-                        roleManager?.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING)?.let { roleLauncher.launch(it) }
-                    },
-                    modifier = Modifier.fillMaxWidth()
+            // Controls Section: Combined Shield Status & Switch Card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (isRoleHeldInitial && isEnabledInitial) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer
+                ),
+                shape = RoundedCornerShape(14.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(text = stringResource(R.string.enable_protection_btn))
+                    Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                        Text(
+                            text = if (isRoleHeldInitial && isEnabledInitial) stringResource(R.string.shield_active) else stringResource(R.string.shield_down),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = when {
+                                !isRoleHeldInitial -> stringResource(R.string.shield_down_desc)
+                                !isEnabledInitial -> stringResource(R.string.service_disabled)
+                                else -> stringResource(R.string.shield_active_desc)
+                            },
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+
+                    if (isRoleHeldInitial) {
+                        Switch(
+                            checked = isEnabledInitial,
+                            onCheckedChange = {
+                                soundManager?.playClick()
+                                onEnabledChanged(it)
+                            }
+                        )
+                    } else {
+                        Button(
+                            onClick = {
+                                soundManager?.playClick()
+                                val roleManager = context.getSystemService(Context.ROLE_SERVICE) as? RoleManager
+                                roleManager?.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING)?.let { roleLauncher.launch(it) }
+                            },
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            Text(text = stringResource(R.string.grant_permission), style = MaterialTheme.typography.labelMedium)
+                        }
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(text = stringResource(R.string.language_selection), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Row(modifier = Modifier.padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                FilterChip(
-                    selected = currentLang == "en",
-                    onClick = {
-                        soundManager?.playClick()
-                        onLanguageChanged("en")
-                    },
-                    label = { Text(stringResource(R.string.lang_english)) }
+            // Allowed Calls Threshold Card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)),
+                shape = RoundedCornerShape(14.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                    horizontalAlignment = Alignment.Start
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Call,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Text(
+                            text = stringResource(R.string.repeat_call_threshold_title),
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    Text(
+                        text = stringResource(R.string.repeat_call_threshold_desc),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Always Block chip
+                        FilterChip(
+                            selected = repeatCallThreshold <= 1,
+                            onClick = {
+                                if (repeatCallThreshold != 1) {
+                                    soundManager?.playClick()
+                                    onThresholdChanged(1)
+                                }
+                            },
+                            leadingIcon = if (repeatCallThreshold <= 1) {
+                                {
+                                    Icon(
+                                        imageVector = Icons.Default.Check,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                }
+                            } else null,
+                            label = { Text(stringResource(R.string.threshold_always_block), style = MaterialTheme.typography.labelSmall) },
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        // Custom write box button
+                        val isCustomActive = repeatCallThreshold > 1
+                        FilterChip(
+                            selected = isCustomActive,
+                            onClick = {
+                                soundManager?.playClick()
+                                customInputText = if (repeatCallThreshold > 1) repeatCallThreshold.toString() else "2"
+                                showCustomThresholdDialog = true
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = if (isCustomActive) Icons.Default.Check else Icons.Default.Edit,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            },
+                            label = {
+                                Text(
+                                    text = if (isCustomActive) {
+                                        stringResource(R.string.threshold_custom_btn, repeatCallThreshold)
+                                    } else {
+                                        stringResource(R.string.threshold_set_custom_btn)
+                                    },
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+
+            // Bottom Section: Language Selection Row
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = stringResource(R.string.language_selection) + ":",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(end = 12.dp)
                 )
-                FilterChip(
-                    selected = currentLang == "es",
-                    onClick = {
-                        soundManager?.playClick()
-                        onLanguageChanged("es")
-                    },
-                    label = { Text(stringResource(R.string.lang_spanish)) }
-                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(
+                        selected = currentLang == "en",
+                        onClick = {
+                            soundManager?.playClick()
+                            onLanguageChanged("en")
+                        },
+                        label = { Text(stringResource(R.string.lang_english), style = MaterialTheme.typography.labelSmall) }
+                    )
+                    FilterChip(
+                        selected = currentLang == "es",
+                        onClick = {
+                            soundManager?.playClick()
+                            onLanguageChanged("es")
+                        },
+                        label = { Text(stringResource(R.string.lang_spanish), style = MaterialTheme.typography.labelSmall) }
+                    )
+                }
             }
         }
     }
@@ -1610,13 +1826,13 @@ fun TroubleshootingScreen(onShowPrivacyPolicy: () -> Unit = {}) {
         val isInPreview = LocalInspectionMode.current
         val appVersionStr = remember(isInPreview) {
             if (isInPreview) {
-                "v1.0.10"
+                "v1.0.14"
             } else {
                 try {
                     val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-                    "v${pInfo.versionName} (${pInfo.longVersionCode})"
+                    "v${pInfo.versionName}"
                 } catch (_: Exception) {
-                    "v1.0.10"
+                    "v1.0.14"
                 }
             }
         }
@@ -1768,7 +1984,8 @@ fun BlockyScreenActivePreview() {
             onEnabledChanged = {},
             currentLang = "en",
             onLanguageChanged = {},
-            blockedCount = 42
+            blockedCount = 42,
+            repeatCallThreshold = 2,
         )
     }
 }
