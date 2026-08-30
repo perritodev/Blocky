@@ -32,7 +32,7 @@
 
 ## 📥 Download & Installation
 
-You can download and install the pre-signed, production-ready APK directly:
+You can download and install APK directly:
 
 1. Go to the **[Releases](https://github.com/perritodev/Blocky/releases)** page.
 2. Download the latest **`Blocky.apk`**.
@@ -42,14 +42,6 @@ You can download and install the pre-signed, production-ready APK directly:
    - Set **Blocky** as your default **Call Screening App**.
    - Grant **Contacts** permission (to avoid blocking known numbers).
    - Disable battery optimization to ensure 24/7 background reliability.
-
----
-
-## 🛠️ Tech Stack & Architecture
-
-- **Language:** Kotlin
-- **UI Toolkit:** Jetpack Compose (Material 3)
-- **Local Database:** Room Database
 
 ---
 
