@@ -81,7 +81,7 @@
     <string name="group_yesterday">Yesterday</string>
     <string name="caller_details_title">Caller Information</string>
     <string name="country_label">Country</string>
-    <string name="location_label">Location / Origin</string>
+    <string name="location_label">City / Region</string>
     <string name="line_type_label">Line Type</string>
     <string name="international_format_label">International</string>
     <string name="national_format_label">National</string>
@@ -119,4 +119,11 @@
     <string name="privacy_policy_btn">Privacy Policy</string>
     <string name="privacy_policy_content">Blocky is committed to protecting your privacy.\n\n1. On-Device Processing: All screening, whitelist checking, and contact lookups occur exclusively on your local device.\n\n2. No Data Collection: Blocky does NOT collect, store on remote servers, or transmit your contact list, call history, or personal identifiers.\n\n3. Permissions Used:\n• Contacts (READ_CONTACTS): To avoid blocking calls from your known contacts.\n• Notifications (POST_NOTIFICATIONS): To display active protection status.\n• Call Screening Role: To allow the Android Telecom system to pass incoming call events to Blocky for local filtering.\n\n4. Third Parties: No user data is shared with or sold to third parties or advertising networks.</string>
     <string name="close_btn">Close</string>
+    <string name="cancel_btn">Cancel</string>
+    <string name="delete_permanent_dialog_title">Delete Permanently</string>
+    <string name="delete_permanent_dialog_desc">This action removes the call record from your history.\n\nSince this number is not added to your contacts or whitelist, future incoming calls from this number will continue to be blocked.</string>
+    <string name="delete_permanent_dialog_confirm">Delete</string>
+    <string name="unblock_all_dialog_title">Unblock All Numbers?</string>
+    <string name="unblock_all_dialog_desc">This will unblock every phone number currently in your blocked list and allow future incoming calls from them.</string>
+    <string name="unblock_all_dialog_confirm">Unblock All</string>
 </resources>

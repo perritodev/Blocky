@@ -1,3 +1,5 @@
+@file:Suppress("FunctionName")
+
 package com.omargarcia.blocky
 
 import android.Manifest
@@ -639,6 +641,47 @@ fun BlockedListScreen(
     val context = LocalContext.current
     var searchQuery by remember { mutableStateOf("") }
     var selectedNumberForDetails by remember { mutableStateOf<BlockedCall?>(null) }
+    var showUnblockAllDialog by remember { mutableStateOf(false) }
+
+    if (showUnblockAllDialog) {
+        AlertDialog(
+            onDismissRequest = { showUnblockAllDialog = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.Warning,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error
+                )
+            },
+            title = {
+                Text(
+                    text = stringResource(R.string.unblock_all_dialog_title),
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = stringResource(R.string.unblock_all_dialog_desc)
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showUnblockAllDialog = false
+                        onUnblockAll()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text(stringResource(R.string.unblock_all_dialog_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showUnblockAllDialog = false }) {
+                    Text(stringResource(R.string.cancel_btn))
+                }
+            }
+        )
+    }
 
     val filteredList = remember(blockedList, searchQuery) {
         if (searchQuery.isBlank()) {
@@ -693,7 +736,7 @@ fun BlockedListScreen(
 
         if (blockedList.isNotEmpty() && searchQuery.isBlank()) {
             Button(
-                onClick = onUnblockAll,
+                onClick = { showUnblockAllDialog = true },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.errorContainer,
@@ -804,10 +847,9 @@ fun WhitelistScreen(
     onRemove: (WhitelistedNumber) -> Unit,
     onDeletePermanent: (WhitelistedNumber) -> Unit,
     onBlockNumber: (WhitelistedNumber) -> Unit,
-    onAddManual: (String) -> Unit
+    onAddManual: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
-    var addNumberText by remember { mutableStateOf("") }
     var searchQuery by remember { mutableStateOf("") }
     var selectedNumberForDetails by remember { mutableStateOf<WhitelistedNumber?>(null) }
 
@@ -837,27 +879,6 @@ fun WhitelistScreen(
                 fontWeight = FontWeight.Bold
             )
         }
-
-        // Add Number Input
-        OutlinedTextField(
-            value = addNumberText,
-            onValueChange = { addNumberText = it },
-            label = { Text(stringResource(R.string.add_number_hint)) },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            trailingIcon = {
-                IconButton(onClick = {
-                    if (addNumberText.isNotBlank()) {
-                        onAddManual(addNumberText)
-                        addNumberText = ""
-                    }
-                }) {
-                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_btn))
-                }
-            }
-        )
-
-        Spacer(modifier = Modifier.height(10.dp))
 
         // Search Bar
         OutlinedTextField(
@@ -968,22 +989,66 @@ fun CallerDetailBottomSheet(
     val dateStr = remember(timestamp) {
         SimpleDateFormat("EEE, MMM dd, yyyy • HH:mm", Locale.getDefault()).format(Date(timestamp))
     }
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    if (showDeleteConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmDialog = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.DeleteForever,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error
+                )
+            },
+            title = {
+                Text(
+                    text = stringResource(R.string.delete_permanent_dialog_title),
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = stringResource(R.string.delete_permanent_dialog_desc)
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteConfirmDialog = false
+                        onDeletePermanent()
+                        onDismiss()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text(stringResource(R.string.delete_permanent_dialog_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirmDialog = false }) {
+                    Text(stringResource(R.string.cancel_btn))
+                }
+            }
+        )
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
+        sheetState = sheetState,
         dragHandle = { BottomSheetDefaults.DragHandle() }
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 8.dp)
+                .padding(horizontal = 20.dp, vertical = 4.dp)
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
                 text = details.flagEmoji,
-                fontSize = 44.sp,
-                modifier = Modifier.padding(bottom = 8.dp)
+                fontSize = 38.sp,
+                modifier = Modifier.padding(bottom = 4.dp)
             )
 
             Text(
@@ -1006,7 +1071,7 @@ fun CallerDetailBottomSheet(
                 text = dateStr,
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.outline,
-                modifier = Modifier.padding(top = 4.dp, bottom = 16.dp)
+                modifier = Modifier.padding(top = 2.dp, bottom = 10.dp)
             )
 
             Card(
@@ -1014,8 +1079,8 @@ fun CallerDetailBottomSheet(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHighest)
             ) {
                 Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    modifier = Modifier.padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     if (details.countryName.isNotBlank()) {
                         DetailInfoRow(
@@ -1032,16 +1097,10 @@ fun CallerDetailBottomSheet(
                             value = details.location
                         )
                     }
-
-                    DetailInfoRow(
-                        icon = Icons.Default.PhoneAndroid,
-                        label = stringResource(R.string.line_type_label),
-                        value = details.numberType
-                    )
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             // Action Buttons
             Button(
@@ -1057,7 +1116,7 @@ fun CallerDetailBottomSheet(
                 Text(stringResource(R.string.action_add_to_contacts))
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             OutlinedButton(
                 onClick = {
@@ -1078,7 +1137,7 @@ fun CallerDetailBottomSheet(
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             OutlinedButton(
                 onClick = {
@@ -1092,12 +1151,11 @@ fun CallerDetailBottomSheet(
                 Text(stringResource(R.string.action_remove_from_list))
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             TextButton(
                 onClick = {
-                    onDeletePermanent()
-                    onDismiss()
+                    showDeleteConfirmDialog = true
                 },
                 colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
                 modifier = Modifier.fillMaxWidth()
@@ -1107,7 +1165,7 @@ fun CallerDetailBottomSheet(
                 Text(stringResource(R.string.action_delete_permanent))
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
         }
     }
 }
@@ -1323,9 +1381,25 @@ private fun checkRoleHeld(context: Context): Boolean {
     }
 }
 
-@Preview(showBackground = true, name = "Protection Screen - Active")
+// ==========================================
+// 🎨 Jetpack Compose Android Studio Previews
+// ==========================================
+
+@Preview(showBackground = true, name = "1. Onboarding Screen")
 @Composable
-private fun MainScreenActivePreview() {
+fun OnboardingPreview() {
+    BlockyTheme {
+        OnboardingScreen(
+            currentLang = "en",
+            onLanguageChanged = {},
+            onCompleted = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "2. Protection Active")
+@Composable
+fun BlockyScreenActivePreview() {
     BlockyTheme {
         BlockyScreen(
             isRoleHeldInitial = true,
@@ -1334,19 +1408,68 @@ private fun MainScreenActivePreview() {
             onEnabledChanged = {},
             currentLang = "en",
             onLanguageChanged = {},
-            blockedCount = 12
+            blockedCount = 42
         )
     }
 }
 
-@Preview(showBackground = true, name = "Onboarding Screen")
+@Preview(showBackground = true, name = "3. Protection Inactive")
 @Composable
-private fun OnboardingScreenPreview() {
+fun BlockyScreenInactivePreview() {
     BlockyTheme {
-        OnboardingScreen(
-            currentLang = "en",
+        BlockyScreen(
+            isRoleHeldInitial = false,
+            onRoleChanged = {},
+            isEnabledInitial = false,
+            onEnabledChanged = {},
+            currentLang = "es",
             onLanguageChanged = {},
-            onCompleted = {}
+            blockedCount = 0
         )
+    }
+}
+
+@Preview(showBackground = true, name = "4. Blocked Numbers List")
+@Composable
+fun BlockedListPreview() {
+    val mockBlocked = listOf(
+        BlockedCall(id = 1, phoneNumber = "+1 555-0101"),
+        BlockedCall(id = 2, phoneNumber = "+1 555-0102"),
+        BlockedCall(id = 3, phoneNumber = "Private / Unknown")
+    )
+    BlockyTheme {
+        BlockedListScreen(
+            blockedList = mockBlocked,
+            onUnblock = {},
+            onUnblockAll = {},
+            onWhitelist = {},
+            onDeletePermanent = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "5. Whitelist Screen")
+@Composable
+fun WhitelistPreview() {
+    val mockWhitelist = listOf(
+        WhitelistedNumber(id = 1, phoneNumber = "+1 555-9999"),
+        WhitelistedNumber(id = 2, phoneNumber = "+1 555-1234")
+    )
+    BlockyTheme {
+        WhitelistScreen(
+            whitelist = mockWhitelist,
+            onRemove = {},
+            onDeletePermanent = {},
+            onBlockNumber = {},
+            onAddManual = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "6. Troubleshooting & Support")
+@Composable
+fun TroubleshootingPreview() {
+    BlockyTheme {
+        TroubleshootingScreen()
     }
 }

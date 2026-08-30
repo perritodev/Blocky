@@ -1,3 +1,5 @@
+@file:Suppress("FunctionName")
+
 package com.omargarcia.blocky.ui.theme
 
 import android.os.Build

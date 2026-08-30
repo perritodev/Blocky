@@ -81,7 +81,7 @@
     <string name="group_yesterday">Ayer</string>
     <string name="caller_details_title">Información del Número</string>
     <string name="country_label">País</string>
-    <string name="location_label">Ubicación / Origen</string>
+    <string name="location_label">Ciudad / Estado</string>
     <string name="line_type_label">Tipo de Línea</string>
     <string name="international_format_label">Internacional</string>
     <string name="national_format_label">Nacional</string>
@@ -119,4 +119,11 @@
     <string name="privacy_policy_btn">Política de Privacidad</string>
     <string name="privacy_policy_content">Blocky está comprometido con la protección de tu privacidad.\n\n1. Procesamiento en el Dispositivo: Todo el filtrado, verificación de lista blanca y consulta de contactos se realiza exclusivamente de forma local.\n\n2. Sin Recopilación de Datos: Blocky NO recopila, almacena en servidores remotos ni transmite tu lista de contactos, historial ni datos personales.\n\n3. Permisos Utilizados:\n• Contactos (READ_CONTACTS): Para evitar bloquear llamadas de contactos conocidos.\n• Notificaciones (POST_NOTIFICATIONS): Para mostrar el estado de protección activa.\n• Rol de Filtrado de Llamadas: Para permitir que el sistema Android transmita eventos de llamadas entrantes a Blocky para su filtrado local.\n\n4. Terceros: Ningún dato del usuario se comparte ni vende a terceros o redes publicitarias.</string>
     <string name="close_btn">Cerrar</string>
+    <string name="cancel_btn">Cancelar</string>
+    <string name="delete_permanent_dialog_title">Eliminar Permanentemente</string>
+    <string name="delete_permanent_dialog_desc">Esta acción elimina el registro de llamada de tu historial.\n\nComo este número no está en tus contactos ni en la lista blanca, las futuras llamadas de este número continuarán siendo bloqueadas.</string>
+    <string name="delete_permanent_dialog_confirm">Eliminar</string>
+    <string name="unblock_all_dialog_title">¿Desbloquear todos los números?</string>
+    <string name="unblock_all_dialog_desc">Esto desbloqueará todos los números de tu lista de bloqueados y permitirá que vuelvan a entrar sus llamadas.</string>
+    <string name="unblock_all_dialog_confirm">Desbloquear Todo</string>
 </resources>

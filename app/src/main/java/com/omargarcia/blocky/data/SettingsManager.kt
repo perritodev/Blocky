@@ -17,7 +17,14 @@ class SettingsManager(context: Context) {
         }
 
     var languageCode: String
-        get() = prefs.getString(KEY_LANGUAGE_CODE, "en") ?: "en"
+        get() {
+            val saved = prefs.getString(KEY_LANGUAGE_CODE, null)
+            if (saved != null) return saved
+            
+            // First use: Detect system language. If Spanish -> "es", otherwise default to "en"
+            val systemLang = java.util.Locale.getDefault().language.lowercase(java.util.Locale.ROOT)
+            return if (systemLang.startsWith("es")) "es" else "en"
+        }
         set(value) {
             prefs.edit { putString(KEY_LANGUAGE_CODE, value) }
         }
