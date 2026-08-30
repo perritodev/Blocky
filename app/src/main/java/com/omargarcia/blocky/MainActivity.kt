@@ -667,7 +667,8 @@ fun MainContent(
                             text = stringResource(R.string.app_name),
                             fontFamily = VT323Font,
                             fontSize = 26.sp,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
                         )
                     },
                 navigationIcon = {
@@ -1069,7 +1070,7 @@ fun BlockedListScreen(
                     text = stringResource(R.string.no_blocked_numbers),
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = Color.White.copy(alpha = 0.8f)
                 )
             }
         } else if (filteredList.isEmpty()) {
@@ -1078,7 +1079,7 @@ fun BlockedListScreen(
                     text = stringResource(R.string.no_results_found),
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = Color.White.copy(alpha = 0.8f)
                 )
             }
         } else {
@@ -1089,7 +1090,7 @@ fun BlockedListScreen(
                 groupedByDate.forEach { (dateHeader, itemsInGroup) ->
                     item(key = "header_$dateHeader") {
                         Surface(
-                            color = MaterialTheme.colorScheme.surfaceVariant,
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
                             shape = RoundedCornerShape(8.dp),
                             modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 2.dp)
                         ) {
@@ -1097,7 +1098,7 @@ fun BlockedListScreen(
                                 text = dateHeader,
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = Color.White,
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                             )
                         }
@@ -1126,7 +1127,8 @@ fun BlockedListScreen(
                                     Text(
                                         text = number.phoneNumber,
                                         style = MaterialTheme.typography.titleMedium.copy(fontFamily = FontFamily.Default),
-                                        fontWeight = FontWeight.SemiBold
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = Color.White
                                     )
                                 }
                                 IconButton(onClick = {
@@ -1232,7 +1234,7 @@ fun WhitelistScreen(
                     text = stringResource(R.string.whitelist_empty),
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = Color.White.copy(alpha = 0.8f)
                 )
             }
         } else if (filteredList.isEmpty()) {
@@ -1241,7 +1243,7 @@ fun WhitelistScreen(
                     text = stringResource(R.string.no_results_found),
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = Color.White.copy(alpha = 0.8f)
                 )
             }
         } else {
@@ -1273,7 +1275,8 @@ fun WhitelistScreen(
                                 Text(
                                     text = number.phoneNumber,
                                     style = MaterialTheme.typography.titleMedium.copy(fontFamily = FontFamily.Default),
-                                    fontWeight = FontWeight.SemiBold
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color.White
                                 )
                             }
                             IconButton(onClick = {
