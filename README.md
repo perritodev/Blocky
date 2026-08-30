@@ -30,7 +30,7 @@
 
 ---
 
-## 📥 Download & Installation (Sideloading)
+## 📥 Download & Installation
 
 You can download and install the pre-signed, production-ready APK directly:
 
