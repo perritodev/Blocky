@@ -956,7 +956,7 @@ fun BlockyScreen(
                     painter = painterResource(R.drawable.ic_blocky_logo),
                     contentDescription = stringResource(R.string.app_name),
                     modifier = Modifier
-                        .size(64.dp)
+                        .size(68.dp)
                         .clip(RoundedCornerShape(16.dp))
                         .clickable {
                             soundManager?.playClick()
@@ -966,7 +966,7 @@ fun BlockyScreen(
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = stringResource(R.string.app_name),
-                    fontSize = 36.sp,
+                    fontSize = 42.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = VT323Font,
                     color = MaterialTheme.colorScheme.primary
@@ -974,8 +974,10 @@ fun BlockyScreen(
                 Text(
                     text = if (isRoleHeldInitial) stringResource(R.string.protection_active) else stringResource(R.string.protection_inactive),
                     textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.85f)
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.90f)
                 )
             }
 
@@ -985,15 +987,16 @@ fun BlockyScreen(
             ) {
                 Text(
                     text = blockedCount.toString(),
-                    fontSize = 58.sp,
+                    fontSize = 66.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = VT323Font,
                     color = MaterialTheme.colorScheme.secondary
                 )
                 Text(
                     text = stringResource(R.string.calls_blocked_label),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f)
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.85f)
                 )
             }
 
