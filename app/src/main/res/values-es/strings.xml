@@ -41,12 +41,12 @@
     <string name="sound_enabled">Sonidos Activados</string>
     <string name="sound_disabled">Sonidos Silenciados</string>
 
-    <string name="repeat_call_threshold_title">Intentos de Llamada Permitido</string>
+    <string name="repeat_call_threshold_title">Intentos de Llamada Permitidos</string>
     <string name="repeat_call_threshold_desc">Permitir que un número desconocido suene si llama repetidamente en 15 min.</string>
     <string name="threshold_always_block">Siempre Bloquear</string>
     <string name="threshold_n_calls">%d Llamadas</string>
     <string name="threshold_custom_btn">Personalizado (%d Llamadas)</string>
-    <string name="threshold_set_custom_btn">Personalizar Número</string>
+    <string name="threshold_set_custom_btn">Número de Intentos</string>
     <string name="custom_threshold_dialog_title">Personalizar Umbral de Llamadas</string>
     <string name="custom_threshold_dialog_desc">Ingresa cuántas veces debe llamar un número desconocido en 15 minutos para permitir que suene:</string>
     <string name="custom_threshold_hint">Número de llamadas (ej. 2, 3, 5)</string>
