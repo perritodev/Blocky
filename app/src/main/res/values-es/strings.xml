@@ -139,6 +139,7 @@
     <string name="delete_permanent_dialog_desc">Esta acción elimina el registro de llamada de tu historial.\n\nComo este número no está en tus contactos ni en la lista blanca, las futuras llamadas de este número continuarán siendo bloqueadas.</string>
     <string name="delete_permanent_dialog_confirm">Eliminar</string>
     <string name="unblock_all_dialog_title">¿Desbloquear todos los números?</string>
-    <string name="unblock_all_dialog_desc">Esto desbloqueará todos los números de tu lista de bloqueados y permitirá que vuelvan a entrar sus llamadas.</string>
-    <string name="unblock_all_dialog_confirm">Desbloquear Todo</string>
+    <string name="unblock_all_dialog_desc">Esto desbloqueará cada número telefónico en tu lista de bloqueados y permitirá futuras llamadas de ellos.</string>
+    <string name="unblock_all_dialog_confirm">Desbloquear todos</string>
+    <string name="thank_you_message">¡Gracias por usar Blocky, espero que te ayude! =)</string>
 </resources>

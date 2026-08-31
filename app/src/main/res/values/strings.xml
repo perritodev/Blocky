@@ -141,4 +141,5 @@
     <string name="unblock_all_dialog_title">Unblock All Numbers?</string>
     <string name="unblock_all_dialog_desc">This will unblock every phone number currently in your blocked list and allow future incoming calls from them.</string>
     <string name="unblock_all_dialog_confirm">Unblock All</string>
+    <string name="thank_you_message">Thank you for using Blocky, i hope it helps you. =)</string>
 </resources>

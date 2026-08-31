@@ -652,7 +652,7 @@ fun MainContent(
                 .fillMaxSize()
                 .scale(1.22f)
                 .offset { IntOffset(parallaxOffset.x.roundToInt(), parallaxOffset.y.roundToInt()) },
-            alpha = 0.09f
+            alpha = 0.30f
         )
 
         Scaffold(
@@ -829,6 +829,49 @@ fun BlockyScreen(
     }
     var showCustomThresholdDialog by remember { mutableStateOf(false) }
     var customInputText by remember { mutableStateOf("") }
+    var showThankYouDialog by remember { mutableStateOf(false) }
+
+    if (showThankYouDialog) {
+        AlertDialog(
+            onDismissRequest = { showThankYouDialog = false },
+            icon = {
+                Image(
+                    painter = painterResource(R.drawable.ic_blocky_logo),
+                    contentDescription = stringResource(R.string.app_name),
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                )
+            },
+            title = {
+                Text(
+                    text = stringResource(R.string.app_name),
+                    fontFamily = VT323Font,
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            },
+            text = {
+                Text(
+                    text = stringResource(R.string.thank_you_message),
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        soundManager?.playClick()
+                        showThankYouDialog = false
+                    }
+                ) {
+                    Text(stringResource(R.string.close_btn))
+                }
+            }
+        )
+    }
 
     if (showCustomThresholdDialog) {
         AlertDialog(
@@ -915,6 +958,10 @@ fun BlockyScreen(
                     modifier = Modifier
                         .size(64.dp)
                         .clip(RoundedCornerShape(16.dp))
+                        .clickable {
+                            soundManager?.playClick()
+                            showThankYouDialog = true
+                        }
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
@@ -1825,13 +1872,13 @@ fun TroubleshootingScreen(onShowPrivacyPolicy: () -> Unit = {}) {
         val isInPreview = LocalInspectionMode.current
         val appVersionStr = remember(isInPreview) {
             if (isInPreview) {
-                "v1.0.14"
+                "v1.0.15"
             } else {
                 try {
                     val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
                     "v${pInfo.versionName}"
                 } catch (_: Exception) {
-                    "v1.0.14"
+                    "v1.0.15"
                 }
             }
         }

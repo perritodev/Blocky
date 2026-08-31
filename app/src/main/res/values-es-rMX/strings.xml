@@ -78,6 +78,10 @@
     <string name="whitelist_empty">No hay números en la lista blanca.</string>
     <string name="add_to_whitelist">Permitir Número</string>
     <string name="remove_from_whitelist">Quitar de Lista Blanca</string>
+    <string name="unblock_all_dialog_title">¿Desbloquear todos los números?</string>
+    <string name="unblock_all_dialog_desc">Esto desbloqueará cada número telefónico en tu lista de bloqueados y permitirá futuras llamadas de ellos.</string>
+    <string name="unblock_all_dialog_confirm">Desbloquear todos</string>
+    <string name="thank_you_message">¡Gracias por usar Blocky, espero que te ayude! =)</string>
     <string name="clear_all_history">Borrar Registro</string>
     <string name="unblock_all">Desbloquear Todos</string>
     <string name="toast_history_cleared">Registro borrado</string>
