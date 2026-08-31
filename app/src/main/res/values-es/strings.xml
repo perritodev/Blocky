@@ -41,7 +41,7 @@
     <string name="sound_enabled">Sonidos Activados</string>
     <string name="sound_disabled">Sonidos Silenciados</string>
 
-    <string name="repeat_call_threshold_title">Umbral de Llamadas Permitidas</string>
+    <string name="repeat_call_threshold_title">Intentos de Llamada Permitido</string>
     <string name="repeat_call_threshold_desc">Permitir que un número desconocido suene si llama repetidamente en 15 min.</string>
     <string name="threshold_always_block">Siempre Bloquear</string>
     <string name="threshold_n_calls">%d Llamadas</string>
