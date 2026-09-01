@@ -152,7 +152,7 @@
     <!-- Threshold Interval -->
     <string name="threshold_interval_label">Time window: %d min</string>
     <string name="threshold_interval_input_label">Time window in minutes:</string>
-    <string name="threshold_calls_input_label">Call attempts required (e.g. 2, 3, 5):</string>
+    <string name="threshold_calls_input_label">Call attempts required:</string>
     <string name="toast_invalid_interval">Please enter a valid time window (1 to 180 minutes)</string>
 
     <!-- Google Play Compliance & Prominent Disclosures -->

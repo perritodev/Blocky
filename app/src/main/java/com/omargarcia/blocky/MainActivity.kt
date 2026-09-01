@@ -67,7 +67,6 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import androidx.core.net.toUri
 import kotlin.math.roundToInt
 import com.omargarcia.blocky.data.*
 import com.omargarcia.blocky.ui.theme.BlockyTheme
@@ -2435,7 +2434,7 @@ fun ConfigurationScreen(
                 val uriString = "mailto:$email?subject=${Uri.encode(supportSubject)}&body=${Uri.encode(deviceInfo)}"
 
                 val intent = Intent(Intent.ACTION_SENDTO).apply {
-                    data = uriString.toUri()
+                    data = Uri.parse(uriString)
                     putExtra(Intent.EXTRA_EMAIL, arrayOf(email))
                     putExtra(Intent.EXTRA_SUBJECT, supportSubject)
                     putExtra(Intent.EXTRA_TEXT, deviceInfo)
