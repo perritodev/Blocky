@@ -11,6 +11,7 @@ class SoundManager(private val context: Context) {
     private val settingsManager = SettingsManager(context)
     private var soundPool: SoundPool? = null
     private var clickSoundId: Int = 0
+    private var alienSoundId: Int = 0
     private var mediaPlayer: MediaPlayer? = null
     private var fadeJob: Job? = null
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
@@ -28,6 +29,7 @@ class SoundManager(private val context: Context) {
 
         try {
             clickSoundId = soundPool?.load(context, R.raw.sfx_button_click, 1) ?: 0
+            alienSoundId = soundPool?.load(context, R.raw.alien_sound, 1) ?: 0
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -38,6 +40,17 @@ class SoundManager(private val context: Context) {
         try {
             if (clickSoundId != 0) {
                 soundPool?.play(clickSoundId, 0.20f, 0.20f, 1, 0, 1.0f)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun playAlienSound() {
+        if (!settingsManager.isSoundEnabled) return
+        try {
+            if (alienSoundId != 0) {
+                soundPool?.play(alienSoundId, 0.20f, 0.20f, 2, 0, 1.0f)
             }
         } catch (e: Exception) {
             e.printStackTrace()

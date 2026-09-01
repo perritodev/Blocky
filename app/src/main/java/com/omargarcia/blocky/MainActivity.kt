@@ -54,6 +54,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -2090,6 +2091,7 @@ fun ConfigurationScreen(
     val soundManager = LocalSoundManager.current
     val isInPreview = LocalInspectionMode.current
     val scrollState = rememberScrollState()
+    val coroutineScope = rememberCoroutineScope()
 
     var notificationState by remember {
         mutableStateOf(
@@ -2105,6 +2107,10 @@ fun ConfigurationScreen(
     // Dialogs for CSV
     var pendingImportNumbers by remember { mutableStateOf<List<String>?>(null) }
     var showExportChoiceDialog by remember { mutableStateOf(false) }
+
+    // Easter Egg State
+    val alienAnim = remember { androidx.compose.animation.core.Animatable(0f) }
+    var isAlienFlying by remember { mutableStateOf(false) }
 
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { _ ->
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -2227,13 +2233,14 @@ fun ConfigurationScreen(
         )
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-            .verticalScroll(scrollState),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+                .verticalScroll(scrollState),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
         Text(
             text = stringResource(R.string.configuration_title),
             style = MaterialTheme.typography.headlineMedium,
@@ -2476,9 +2483,86 @@ fun ConfigurationScreen(
             style = MaterialTheme.typography.labelMedium,
             color = Color.White.copy(alpha = 0.5f),
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(bottom = 24.dp)
+            modifier = Modifier
+                .padding(bottom = 24.dp)
+                .clickable {
+                    if (!isAlienFlying) {
+                        isAlienFlying = true
+                        soundManager?.playAlienSound()
+                        coroutineScope.launch {
+                            alienAnim.snapTo(0f)
+                            alienAnim.animateTo(
+                                targetValue = 1f,
+                                animationSpec = androidx.compose.animation.core.tween(
+                                    durationMillis = 2400,
+                                    easing = androidx.compose.animation.core.LinearEasing
+                                )
+                            )
+                            isAlienFlying = false
+                        }
+                    }
+                }
         )
     }
+
+    if (isAlienFlying) {
+        BoxWithConstraints(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            val screenW = maxWidth
+            val screenH = maxHeight
+            val progress = alienAnim.value
+
+            // Alien flight coordinates: swoops across from left (-70dp) to right (screenW + 70dp)
+            val alienStartX = -70.dp
+            val alienEndX = screenW + 70.dp
+            val alienX = androidx.compose.ui.unit.lerp(alienStartX, alienEndX, progress)
+            // Wavy flight pattern like classic Galaxian arcade alien dive
+            val alienY = (screenH * 0.22f) + ((kotlin.math.sin(progress * Math.PI.toFloat() * 2f)) * 45).dp
+            val tiltAngle = (kotlin.math.cos(progress * Math.PI.toFloat() * 2f)) * 18f
+
+            // Shot 1: Fired at progress 0.30f
+            if (progress in 0.30f..1.0f) {
+                val shot1Progress = ((progress - 0.30f) / 0.70f).coerceIn(0f, 1f)
+                val shot1X = screenW * 0.35f
+                val shot1Y = androidx.compose.ui.unit.lerp(screenH * 0.22f, screenH + 40.dp, shot1Progress)
+                Box(
+                    modifier = Modifier
+                        .offset(x = shot1X, y = shot1Y)
+                        .size(width = 5.dp, height = 18.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(Color(0xFFFF3333))
+                )
+            }
+
+            // Shot 2: Fired at progress 0.55f
+            if (progress in 0.55f..1.0f) {
+                val shot2Progress = ((progress - 0.55f) / 0.45f).coerceIn(0f, 1f)
+                val shot2X = screenW * 0.62f
+                val shot2Y = androidx.compose.ui.unit.lerp(screenH * 0.22f, screenH + 40.dp, shot2Progress)
+                Box(
+                    modifier = Modifier
+                        .offset(x = shot2X, y = shot2Y)
+                        .size(width = 5.dp, height = 18.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(Color(0xFFFFCC00))
+                )
+            }
+
+            // Galaxian Alien Sprite
+            Image(
+                painter = painterResource(R.drawable.alien),
+                contentDescription = "Galaxian Alien",
+                modifier = Modifier
+                    .offset(x = alienX, y = alienY)
+                    .size(56.dp)
+                    .graphicsLayer {
+                        rotationZ = tiltAngle
+                    }
+            )
+        }
+    }
+}
 }
 
 @Composable
