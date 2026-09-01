@@ -1125,7 +1125,7 @@ fun BlockyScreen(
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = stringResource(R.string.app_name),
-                    fontSize = 42.sp,
+                    fontSize = 50.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = VT323Font,
                     color = MaterialTheme.colorScheme.primary
@@ -1133,10 +1133,10 @@ fun BlockyScreen(
                 Text(
                     text = if (isRoleHeldInitial) stringResource(R.string.protection_active) else stringResource(R.string.protection_inactive),
                     textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.90f)
+                    style = MaterialTheme.typography.titleMedium,
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.95f)
                 )
             }
 
@@ -1146,16 +1146,17 @@ fun BlockyScreen(
             ) {
                 Text(
                     text = blockedCount.toString(),
-                    fontSize = 66.sp,
+                    fontSize = 78.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = VT323Font,
                     color = MaterialTheme.colorScheme.primary
                 )
                 Text(
                     text = stringResource(R.string.calls_blocked_label),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.85f)
+                    style = MaterialTheme.typography.titleMedium,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.90f)
                 )
             }
 
