@@ -16,14 +16,14 @@ import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.graphics.Color
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80,
+    primary = Blue80,
+    secondary = BlueGrey80,
+    tertiary = Cyan80,
     background = Color(0xFF323238),
     surface = Color(0xFF3D3D45),
-    onPrimary = Color.Black,
-    onSecondary = Color.Black,
-    onTertiary = Color.Black,
+    onPrimary = Color(0xFF0D1B2A),
+    onSecondary = Color(0xFF0D1B2A),
+    onTertiary = Color(0xFF0D1B2A),
     onBackground = Color(0xFFFFFFFF),
     onSurface = Color(0xFFFFFFFF),
     surfaceVariant = Color(0xFF4C4C56),
@@ -31,14 +31,14 @@ private val DarkColorScheme = darkColorScheme(
 )
 
 private val LightColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80,
+    primary = Blue80,
+    secondary = BlueGrey80,
+    tertiary = Cyan80,
     background = Color(0xFF323238),
     surface = Color(0xFF3D3D45),
-    onPrimary = Color.Black,
-    onSecondary = Color.Black,
-    onTertiary = Color.Black,
+    onPrimary = Color(0xFF0D1B2A),
+    onSecondary = Color(0xFF0D1B2A),
+    onTertiary = Color(0xFF0D1B2A),
     onBackground = Color(0xFFFFFFFF),
     onSurface = Color(0xFFFFFFFF),
     surfaceVariant = Color(0xFF4C4C56),

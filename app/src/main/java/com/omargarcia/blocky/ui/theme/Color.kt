@@ -2,10 +2,19 @@ package com.omargarcia.blocky.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Purple80 = Color(0xFFD0BCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
+val Blue80 = Color(0xFF64B5F6)
+val BlueGrey80 = Color(0xFF90A4AE)
+val Cyan80 = Color(0xFF80DEEA)
 
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
+val Blue40 = Color(0xFF1976D2)
+val BlueGrey40 = Color(0xFF455A64)
+val Cyan40 = Color(0xFF00838F)
+
+// Aliases mapped to original blue palette
+val Purple80 = Blue80
+val PurpleGrey80 = BlueGrey80
+val Pink80 = Cyan80
+
+val Purple40 = Blue40
+val PurpleGrey40 = BlueGrey40
+val Pink40 = Cyan40
