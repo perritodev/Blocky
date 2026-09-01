@@ -2434,7 +2434,7 @@ fun ConfigurationScreen(
                 val uriString = "mailto:$email?subject=${Uri.encode(supportSubject)}&body=${Uri.encode(deviceInfo)}"
 
                 val intent = Intent(Intent.ACTION_SENDTO).apply {
-                    data = Uri.parse(uriString)
+                    data = uriString.toUri()
                     putExtra(Intent.EXTRA_EMAIL, arrayOf(email))
                     putExtra(Intent.EXTRA_SUBJECT, supportSubject)
                     putExtra(Intent.EXTRA_TEXT, deviceInfo)
