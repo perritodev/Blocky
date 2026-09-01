@@ -2513,39 +2513,53 @@ fun ConfigurationScreen(
             val screenH = maxHeight
             val progress = alienAnim.value
 
-            // Alien flight coordinates: swoops across from left (-70dp) to right (screenW + 70dp)
-            val alienStartX = -70.dp
-            val alienEndX = screenW + 70.dp
+            // Alien flight coordinates: swoops across from left (-alienSize) to right (screenW + alienSize)
+            val alienSize = 56.dp
+            val alienStartX = -alienSize
+            val alienEndX = screenW + alienSize
             val alienX = androidx.compose.ui.unit.lerp(alienStartX, alienEndX, progress)
             // Wavy flight pattern like classic Galaxian arcade alien dive
-            val alienY = (screenH * 0.22f) + ((kotlin.math.sin(progress * Math.PI.toFloat() * 2f)) * 45).dp
+            val alienY = (screenH * 0.20f) + ((kotlin.math.sin(progress * Math.PI.toFloat() * 2f)) * 40).dp
 
-            // Shot 1: Fired at progress 0.30f
-            if (progress in 0.30f..1.0f) {
-                val shot1Progress = ((progress - 0.30f) / 0.70f).coerceIn(0f, 1f)
-                val shot1X = screenW * 0.35f
-                val shot1Y = androidx.compose.ui.unit.lerp(screenH * 0.22f, screenH + 40.dp, shot1Progress)
-                Box(
-                    modifier = Modifier
-                        .offset(x = shot1X, y = shot1Y)
-                        .size(width = 5.dp, height = 18.dp)
-                        .clip(RoundedCornerShape(2.dp))
-                        .background(Color(0xFFFF3333))
-                )
+            // Helper to get exact bottom-center of the alien at a given firing progress
+            fun getAlienShotOrigin(fireProgress: Float): Pair<androidx.compose.ui.unit.Dp, androidx.compose.ui.unit.Dp> {
+                val originX = androidx.compose.ui.unit.lerp(alienStartX, alienEndX, fireProgress) + (alienSize / 2) - 2.5.dp
+                val originY = (screenH * 0.20f) + ((kotlin.math.sin(fireProgress * Math.PI.toFloat() * 2f)) * 40).dp + alienSize - 4.dp
+                return Pair(originX, originY)
             }
 
-            // Shot 2: Fired at progress 0.55f
-            if (progress in 0.55f..1.0f) {
-                val shot2Progress = ((progress - 0.55f) / 0.45f).coerceIn(0f, 1f)
-                val shot2X = screenW * 0.62f
-                val shot2Y = androidx.compose.ui.unit.lerp(screenH * 0.22f, screenH + 40.dp, shot2Progress)
-                Box(
-                    modifier = Modifier
-                        .offset(x = shot2X, y = shot2Y)
-                        .size(width = 5.dp, height = 18.dp)
-                        .clip(RoundedCornerShape(2.dp))
-                        .background(Color(0xFFFFCC00))
-                )
+            // Shot 1: Fired at progress 0.35f directly from alien bottom-center
+            val fire1Time = 0.35f
+            val (shot1OriginX, shot1OriginY) = getAlienShotOrigin(fire1Time)
+            if (progress >= fire1Time) {
+                val shot1Progress = ((progress - fire1Time) / 0.45f).coerceIn(0f, 1f)
+                if (shot1Progress < 1f) {
+                    val shot1Y = androidx.compose.ui.unit.lerp(shot1OriginY, screenH + 40.dp, shot1Progress)
+                    Box(
+                        modifier = Modifier
+                            .offset(x = shot1OriginX, y = shot1Y)
+                            .size(width = 5.dp, height = 18.dp)
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(Color(0xFFFF3333))
+                    )
+                }
+            }
+
+            // Shot 2: Fired at progress 0.58f directly from alien bottom-center
+            val fire2Time = 0.58f
+            val (shot2OriginX, shot2OriginY) = getAlienShotOrigin(fire2Time)
+            if (progress >= fire2Time) {
+                val shot2Progress = ((progress - fire2Time) / 0.40f).coerceIn(0f, 1f)
+                if (shot2Progress < 1f) {
+                    val shot2Y = androidx.compose.ui.unit.lerp(shot2OriginY, screenH + 40.dp, shot2Progress)
+                    Box(
+                        modifier = Modifier
+                            .offset(x = shot2OriginX, y = shot2Y)
+                            .size(width = 5.dp, height = 18.dp)
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(Color(0xFFFFCC00))
+                    )
+                }
             }
 
             // Galaxian Alien Sprite (stays upright, no rotation)
@@ -2554,7 +2568,7 @@ fun ConfigurationScreen(
                 contentDescription = "Galaxian Alien",
                 modifier = Modifier
                     .offset(x = alienX, y = alienY)
-                    .size(56.dp)
+                    .size(alienSize)
             )
         }
     }
