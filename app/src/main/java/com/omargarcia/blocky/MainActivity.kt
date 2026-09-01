@@ -78,6 +78,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 import com.omargarcia.blocky.utils.CsvContactHelper
+import com.omargarcia.blocky.utils.CsvExportOption
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -300,7 +301,7 @@ fun MainContainer() {
                         Toast.makeText(context, context.getString(R.string.csv_import_success, count), Toast.LENGTH_SHORT).show()
                     }
                 },
-                onExportNumbersToCsv = { uri ->
+                onExportNumbersToCsv = { uri, exportOption ->
                     scope.launch {
                         var count = 0
                         withContext(Dispatchers.IO) {
@@ -308,7 +309,7 @@ fun MainContainer() {
                                 context.contentResolver.openOutputStream(uri)?.use { os ->
                                     val allBlocked = blockLogDao.getAllList()
                                     val allWhitelist = whitelistDao.getAllList()
-                                    count = CsvContactHelper.exportToGoogleCsv(os, allBlocked, allWhitelist)
+                                    count = CsvContactHelper.exportToGoogleCsv(os, allBlocked, allWhitelist, exportOption)
                                 }
                             } catch (e: Exception) {
                                 e.printStackTrace()
@@ -727,7 +728,7 @@ fun MainContent(
     onAddWhitelistManualNumber: (String) -> Unit,
     onImportNumbersToBlocked: (List<String>) -> Unit,
     onImportNumbersToWhitelist: (List<String>) -> Unit,
-    onExportNumbersToCsv: (android.net.Uri) -> Unit,
+    onExportNumbersToCsv: (android.net.Uri, CsvExportOption) -> Unit,
     onFinishOnboarding: () -> Unit,
 ) {
     val parallaxOffset by rememberParallaxOffset(maxOffsetPx = 45f)
@@ -2069,7 +2070,7 @@ fun ConfigurationScreen(
     roleHeld: Boolean = true,
     onRoleChanged: (Boolean) -> Unit = {},
     onShowPrivacyPolicy: () -> Unit = {},
-    onExportNumbers: (android.net.Uri) -> Unit = {},
+    onExportNumbers: (android.net.Uri, CsvExportOption) -> Unit = { _, _ -> },
     onImportBlocked: (List<String>) -> Unit = {},
     onImportWhitelist: (List<String>) -> Unit = {}
 ) {
@@ -2089,8 +2090,10 @@ fun ConfigurationScreen(
     var batteryState by remember { mutableStateOf(if (isInPreview) true else isIgnoringBatteryOptimizations(context)) }
     var currentRoleHeld by remember { mutableStateOf(roleHeld) }
 
-    // Dialog for CSV target list selection
+    // Dialogs for CSV
     var pendingImportNumbers by remember { mutableStateOf<List<String>?>(null) }
+    var showExportChoiceDialog by remember { mutableStateOf(false) }
+    var selectedExportOption by remember { mutableStateOf(CsvExportOption.ALL) }
 
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { _ ->
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -2107,7 +2110,7 @@ fun ConfigurationScreen(
 
     val exportCsvLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri ->
         if (uri != null) {
-            onExportNumbers(uri)
+            onExportNumbers(uri, selectedExportOption)
         }
     }
 
@@ -2127,6 +2130,61 @@ fun ConfigurationScreen(
                 Toast.makeText(context, "Error reading CSV file", Toast.LENGTH_SHORT).show()
             }
         }
+    }
+
+    if (showExportChoiceDialog) {
+        AlertDialog(
+            onDismissRequest = { showExportChoiceDialog = false },
+            icon = { Icon(Icons.Default.FileUpload, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+            title = { Text(stringResource(R.string.export_target_dialog_title), fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        text = stringResource(R.string.export_target_dialog_desc),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Button(
+                        onClick = {
+                            soundManager?.playClick()
+                            selectedExportOption = CsvExportOption.ALL
+                            showExportChoiceDialog = false
+                            exportCsvLauncher.launch("blocky_all_numbers.csv")
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(R.string.export_option_both))
+                    }
+                    OutlinedButton(
+                        onClick = {
+                            soundManager?.playClick()
+                            selectedExportOption = CsvExportOption.BLOCKED_ONLY
+                            showExportChoiceDialog = false
+                            exportCsvLauncher.launch("blocky_blocked_numbers.csv")
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(R.string.export_option_blocked))
+                    }
+                    OutlinedButton(
+                        onClick = {
+                            soundManager?.playClick()
+                            selectedExportOption = CsvExportOption.WHITELIST_ONLY
+                            showExportChoiceDialog = false
+                            exportCsvLauncher.launch("blocky_whitelist_numbers.csv")
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(R.string.export_option_whitelist))
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showExportChoiceDialog = false }) {
+                    Text(stringResource(R.string.cancel_btn))
+                }
+            }
+        )
     }
 
     if (pendingImportNumbers != null) {
@@ -2312,7 +2370,7 @@ fun ConfigurationScreen(
                     Button(
                         onClick = {
                             soundManager?.playClick()
-                            exportCsvLauncher.launch("blocky_numbers_export.csv")
+                            showExportChoiceDialog = true
                         },
                         modifier = Modifier.weight(1f)
                     ) {

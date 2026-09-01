@@ -11,6 +11,12 @@ import java.io.OutputStream
 import java.io.OutputStreamWriter
 import java.nio.charset.StandardCharsets
 
+enum class CsvExportOption {
+    ALL,
+    BLOCKED_ONLY,
+    WHITELIST_ONLY
+}
+
 object CsvContactHelper {
 
     /**
@@ -19,7 +25,8 @@ object CsvContactHelper {
     fun exportToGoogleCsv(
         outputStream: OutputStream,
         blockedList: List<BlockedCall>,
-        whitelist: List<WhitelistedNumber>
+        whitelist: List<WhitelistedNumber>,
+        exportOption: CsvExportOption = CsvExportOption.ALL
     ): Int {
         var count = 0
         OutputStreamWriter(outputStream, StandardCharsets.UTF_8).use { writer ->
@@ -27,21 +34,25 @@ object CsvContactHelper {
             writer.write("Name,Given Name,Family Name,Group Membership,Phone 1 - Type,Phone 1 - Value\r\n")
 
             // Write Blocked Numbers
-            for (item in blockedList) {
-                val cleanNum = escapeCsv(item.phoneNumber)
-                val name = escapeCsv("Blocked - ${item.phoneNumber}")
-                val group = escapeCsv("* Blocky Blocked")
-                writer.write("$name,$name,,$group,Mobile,$cleanNum\r\n")
-                count++
+            if (exportOption == CsvExportOption.ALL || exportOption == CsvExportOption.BLOCKED_ONLY) {
+                for (item in blockedList) {
+                    val cleanNum = escapeCsv(item.phoneNumber)
+                    val name = escapeCsv("Blocked - ${item.phoneNumber}")
+                    val group = escapeCsv("* Blocky Blocked")
+                    writer.write("$name,$name,,$group,Mobile,$cleanNum\r\n")
+                    count++
+                }
             }
 
             // Write Whitelisted Numbers
-            for (item in whitelist) {
-                val cleanNum = escapeCsv(item.phoneNumber)
-                val name = escapeCsv("Whitelisted - ${item.phoneNumber}")
-                val group = escapeCsv("* Blocky Whitelist")
-                writer.write("$name,$name,,$group,Mobile,$cleanNum\r\n")
-                count++
+            if (exportOption == CsvExportOption.ALL || exportOption == CsvExportOption.WHITELIST_ONLY) {
+                for (item in whitelist) {
+                    val cleanNum = escapeCsv(item.phoneNumber)
+                    val name = escapeCsv("Whitelisted - ${item.phoneNumber}")
+                    val group = escapeCsv("* Blocky Whitelist")
+                    writer.write("$name,$name,,$group,Mobile,$cleanNum\r\n")
+                    count++
+                }
             }
             writer.flush()
         }
