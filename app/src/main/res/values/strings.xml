@@ -137,6 +137,9 @@
     <string name="export_option_both">All (Blocked &amp; Whitelist)</string>
     <string name="export_option_blocked">Blocked Numbers Only</string>
     <string name="export_option_whitelist">Whitelist Numbers Only</string>
+    <string name="export_action_share">Share with App</string>
+    <string name="export_action_save">Save to Files / Folder</string>
+    <string name="toast_csv_saved_success">CSV file saved to device successfully</string>
     <string name="share_csv_chooser_title">Share Numbers CSV</string>
 
     <!-- Permissions Health Hub -->

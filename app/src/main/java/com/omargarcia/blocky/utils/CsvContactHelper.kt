@@ -1,5 +1,6 @@
 package com.omargarcia.blocky.utils
 
+import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -51,13 +52,16 @@ object CsvContactHelper {
         )
 
         val sendIntent = Intent(Intent.ACTION_SEND).apply {
-            type = "text/csv"
+            type = "text/*"
             putExtra(Intent.EXTRA_STREAM, contentUri)
             putExtra(Intent.EXTRA_SUBJECT, file.nameWithoutExtension)
+            clipData = ClipData.newRawUri(file.name, contentUri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
 
         val chooserIntent = Intent.createChooser(sendIntent, chooserTitle).apply {
+            clipData = ClipData.newRawUri(file.name, contentUri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         context.startActivity(chooserIntent)

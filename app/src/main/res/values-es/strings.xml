@@ -137,6 +137,9 @@
     <string name="export_option_both">Todos (Bloqueados y Permitidos)</string>
     <string name="export_option_blocked">Solo números bloqueados</string>
     <string name="export_option_whitelist">Solo lista de permitidos</string>
+    <string name="export_action_share">Compartir con App</string>
+    <string name="export_action_save">Guardar en Archivos / Carpeta</string>
+    <string name="toast_csv_saved_success">Archivo CSV guardado en el dispositivo con éxito</string>
     <string name="share_csv_chooser_title">Compartir archivo CSV</string>
 
     <!-- Permissions Health Hub -->

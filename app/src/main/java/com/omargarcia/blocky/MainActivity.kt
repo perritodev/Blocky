@@ -163,6 +163,33 @@ fun MainContainer() {
     val csvImportSuccessTemplate = stringResource(R.string.csv_import_success)
     val shareCsvChooserTitle = stringResource(R.string.share_csv_chooser_title)
 
+    var pendingSaveExportOption by remember { mutableStateOf<CsvExportOption?>(null) }
+    val exportCsvDocumentLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("text/csv")
+    ) { uri: Uri? ->
+        val option = pendingSaveExportOption
+        if (uri != null && option != null) {
+            scope.launch {
+                var count = 0
+                withContext(Dispatchers.IO) {
+                    try {
+                        val allBlocked = blockLogDao.getAllList()
+                        val allWhitelist = whitelistDao.getAllList()
+                        context.contentResolver.openOutputStream(uri)?.use { os ->
+                            count = CsvContactHelper.exportToGoogleCsv(os, allBlocked, allWhitelist, option)
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+                if (count > 0) {
+                    Toast.makeText(context, R.string.toast_csv_saved_success, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+        pendingSaveExportOption = null
+    }
+
     CompositionLocalProvider(LocalSoundManager provides soundManager) {
         Crossfade(targetState = isOnboardingCompleted, label = "ScreenTransition") { completed ->
             if (completed) {
@@ -330,6 +357,15 @@ fun MainContainer() {
                             Toast.makeText(context, R.string.csv_import_empty, Toast.LENGTH_SHORT).show()
                         }
                     }
+                },
+                onSaveNumbersToLocalFile = { exportOption ->
+                    val filename = when (exportOption) {
+                        CsvExportOption.ALL -> "blocky_all_numbers.csv"
+                        CsvExportOption.BLOCKED_ONLY -> "blocky_blocked_numbers.csv"
+                        CsvExportOption.WHITELIST_ONLY -> "blocky_whitelist_numbers.csv"
+                    }
+                    pendingSaveExportOption = exportOption
+                    exportCsvDocumentLauncher.launch(filename)
                 }
             ) {
                 isOnboardingCompleted = false
@@ -742,6 +778,7 @@ fun MainContent(
     onImportNumbersToBlocked: (List<String>) -> Unit,
     onImportNumbersToWhitelist: (List<String>) -> Unit,
     onExportNumbersToCsv: (CsvExportOption) -> Unit,
+    onSaveNumbersToLocalFile: (CsvExportOption) -> Unit = {},
     onFinishOnboarding: () -> Unit,
 ) {
     val parallaxOffset by rememberParallaxOffset(maxOffsetPx = 45f)
@@ -926,6 +963,7 @@ fun MainContent(
                                     showPrivacyPolicyModal = true
                                 },
                                 onExportNumbers = onExportNumbersToCsv,
+                                onSaveNumbersToLocalFile = onSaveNumbersToLocalFile,
                                 onImportBlocked = onImportNumbersToBlocked,
                                 onImportWhitelist = onImportNumbersToWhitelist
                             )
@@ -2087,6 +2125,7 @@ fun ConfigurationScreen(
     onRoleChanged: (Boolean) -> Unit = {},
     onShowPrivacyPolicy: () -> Unit = {},
     onExportNumbers: (CsvExportOption) -> Unit = {},
+    onSaveNumbersToLocalFile: (CsvExportOption) -> Unit = {},
     onImportBlocked: (List<String>) -> Unit = {},
     onImportWhitelist: (List<String>) -> Unit = {}
 ) {
@@ -2110,6 +2149,7 @@ fun ConfigurationScreen(
     // Dialogs for CSV
     var pendingImportNumbers by remember { mutableStateOf<List<String>?>(null) }
     var showExportChoiceDialog by remember { mutableStateOf(false) }
+    var selectedExportOption by remember { mutableStateOf(CsvExportOption.ALL) }
 
     // Easter Egg State
     val alienAnim = remember { androidx.compose.animation.core.Animatable(0f) }
@@ -2157,41 +2197,72 @@ fun ConfigurationScreen(
                         text = stringResource(R.string.export_target_dialog_desc),
                         style = MaterialTheme.typography.bodyMedium
                     )
+
+                    FilterChip(
+                        selected = selectedExportOption == CsvExportOption.ALL,
+                        onClick = {
+                            soundManager?.playClick()
+                            selectedExportOption = CsvExportOption.ALL
+                        },
+                        leadingIcon = if (selectedExportOption == CsvExportOption.ALL) {
+                            { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                        } else null,
+                        label = { Text(stringResource(R.string.export_option_both), style = MaterialTheme.typography.bodySmall) },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    FilterChip(
+                        selected = selectedExportOption == CsvExportOption.BLOCKED_ONLY,
+                        onClick = {
+                            soundManager?.playClick()
+                            selectedExportOption = CsvExportOption.BLOCKED_ONLY
+                        },
+                        leadingIcon = if (selectedExportOption == CsvExportOption.BLOCKED_ONLY) {
+                            { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                        } else null,
+                        label = { Text(stringResource(R.string.export_option_blocked), style = MaterialTheme.typography.bodySmall) },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    FilterChip(
+                        selected = selectedExportOption == CsvExportOption.WHITELIST_ONLY,
+                        onClick = {
+                            soundManager?.playClick()
+                            selectedExportOption = CsvExportOption.WHITELIST_ONLY
+                        },
+                        leadingIcon = if (selectedExportOption == CsvExportOption.WHITELIST_ONLY) {
+                            { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                        } else null,
+                        label = { Text(stringResource(R.string.export_option_whitelist), style = MaterialTheme.typography.bodySmall) },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
                     Button(
                         onClick = {
                             soundManager?.playClick()
                             showExportChoiceDialog = false
-                            onExportNumbers(CsvExportOption.ALL)
+                            onExportNumbers(selectedExportOption)
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text(stringResource(R.string.export_option_both))
+                        Text(stringResource(R.string.export_action_share))
                     }
+
                     OutlinedButton(
                         onClick = {
                             soundManager?.playClick()
                             showExportChoiceDialog = false
-                            onExportNumbers(CsvExportOption.BLOCKED_ONLY)
+                            onSaveNumbersToLocalFile(selectedExportOption)
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.Save, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text(stringResource(R.string.export_option_blocked))
-                    }
-                    OutlinedButton(
-                        onClick = {
-                            soundManager?.playClick()
-                            showExportChoiceDialog = false
-                            onExportNumbers(CsvExportOption.WHITELIST_ONLY)
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(stringResource(R.string.export_option_whitelist))
+                        Text(stringResource(R.string.export_action_save))
                     }
                 }
             },
