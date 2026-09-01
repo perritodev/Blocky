@@ -28,6 +28,10 @@ private val DarkColorScheme = darkColorScheme(
     onSurface = Color(0xFFFFFFFF),
     surfaceVariant = Color(0xFF4C4C56),
     onSurfaceVariant = Color(0xFFE2E2E8),
+    primaryContainer = ActiveShieldBlueContainer,
+    onPrimaryContainer = Color.White,
+    secondaryContainer = Color(0xFF37474F),
+    onSecondaryContainer = Color(0xFFECEFF1),
 )
 
 private val LightColorScheme = darkColorScheme(
@@ -43,6 +47,10 @@ private val LightColorScheme = darkColorScheme(
     onSurface = Color(0xFFFFFFFF),
     surfaceVariant = Color(0xFF4C4C56),
     onSurfaceVariant = Color(0xFFE2E2E8),
+    primaryContainer = ActiveShieldBlueContainer,
+    onPrimaryContainer = Color.White,
+    secondaryContainer = Color(0xFF37474F),
+    onSecondaryContainer = Color(0xFFECEFF1),
 )
 
 @Composable

@@ -1178,7 +1178,8 @@ fun BlockyScreen(
                         Text(
                             text = if (isRoleHeldInitial && isEnabledInitial) stringResource(R.string.shield_active) else stringResource(R.string.shield_down),
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
                         )
                         Text(
                             text = when {
@@ -1186,7 +1187,8 @@ fun BlockyScreen(
                                 !isEnabledInitial -> stringResource(R.string.service_disabled)
                                 else -> stringResource(R.string.shield_active_desc)
                             },
-                            style = MaterialTheme.typography.bodySmall
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.White.copy(alpha = 0.85f)
                         )
                     }
 
