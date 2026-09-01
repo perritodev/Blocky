@@ -2519,7 +2519,6 @@ fun ConfigurationScreen(
             val alienX = androidx.compose.ui.unit.lerp(alienStartX, alienEndX, progress)
             // Wavy flight pattern like classic Galaxian arcade alien dive
             val alienY = (screenH * 0.22f) + ((kotlin.math.sin(progress * Math.PI.toFloat() * 2f)) * 45).dp
-            val tiltAngle = (kotlin.math.cos(progress * Math.PI.toFloat() * 2f)) * 18f
 
             // Shot 1: Fired at progress 0.30f
             if (progress in 0.30f..1.0f) {
@@ -2549,16 +2548,13 @@ fun ConfigurationScreen(
                 )
             }
 
-            // Galaxian Alien Sprite
+            // Galaxian Alien Sprite (stays upright, no rotation)
             Image(
                 painter = painterResource(R.drawable.alien),
                 contentDescription = "Galaxian Alien",
                 modifier = Modifier
                     .offset(x = alienX, y = alienY)
                     .size(56.dp)
-                    .graphicsLayer {
-                        rotationZ = tiltAngle
-                    }
             )
         }
     }
