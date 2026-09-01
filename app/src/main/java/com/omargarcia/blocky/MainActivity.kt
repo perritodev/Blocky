@@ -301,21 +301,33 @@ fun MainContainer() {
                         Toast.makeText(context, context.getString(R.string.csv_import_success, count), Toast.LENGTH_SHORT).show()
                     }
                 },
-                onExportNumbersToCsv = { uri, exportOption ->
+                onExportNumbersToCsv = { exportOption ->
                     scope.launch {
                         var count = 0
+                        val filename = when (exportOption) {
+                            CsvExportOption.ALL -> "blocky_all_numbers.csv"
+                            CsvExportOption.BLOCKED_ONLY -> "blocky_blocked_numbers.csv"
+                            CsvExportOption.WHITELIST_ONLY -> "blocky_whitelist_numbers.csv"
+                        }
                         withContext(Dispatchers.IO) {
                             try {
-                                context.contentResolver.openOutputStream(uri)?.use { os ->
-                                    val allBlocked = blockLogDao.getAllList()
-                                    val allWhitelist = whitelistDao.getAllList()
-                                    count = CsvContactHelper.exportToGoogleCsv(os, allBlocked, allWhitelist, exportOption)
-                                }
+                                val allBlocked = blockLogDao.getAllList()
+                                val allWhitelist = whitelistDao.getAllList()
+                                count = CsvContactHelper.exportAndShareCsv(
+                                    context = context,
+                                    filename = filename,
+                                    blockedList = allBlocked,
+                                    whitelist = allWhitelist,
+                                    exportOption = exportOption,
+                                    chooserTitle = context.getString(R.string.share_csv_chooser_title)
+                                )
                             } catch (e: Exception) {
                                 e.printStackTrace()
                             }
                         }
-                        Toast.makeText(context, context.getString(R.string.csv_export_success, count), Toast.LENGTH_SHORT).show()
+                        if (count == 0) {
+                            Toast.makeText(context, R.string.csv_import_empty, Toast.LENGTH_SHORT).show()
+                        }
                     }
                 }
             ) {
@@ -728,7 +740,7 @@ fun MainContent(
     onAddWhitelistManualNumber: (String) -> Unit,
     onImportNumbersToBlocked: (List<String>) -> Unit,
     onImportNumbersToWhitelist: (List<String>) -> Unit,
-    onExportNumbersToCsv: (android.net.Uri, CsvExportOption) -> Unit,
+    onExportNumbersToCsv: (CsvExportOption) -> Unit,
     onFinishOnboarding: () -> Unit,
 ) {
     val parallaxOffset by rememberParallaxOffset(maxOffsetPx = 45f)
@@ -2070,7 +2082,7 @@ fun ConfigurationScreen(
     roleHeld: Boolean = true,
     onRoleChanged: (Boolean) -> Unit = {},
     onShowPrivacyPolicy: () -> Unit = {},
-    onExportNumbers: (android.net.Uri, CsvExportOption) -> Unit = { _, _ -> },
+    onExportNumbers: (CsvExportOption) -> Unit = {},
     onImportBlocked: (List<String>) -> Unit = {},
     onImportWhitelist: (List<String>) -> Unit = {}
 ) {
@@ -2093,7 +2105,6 @@ fun ConfigurationScreen(
     // Dialogs for CSV
     var pendingImportNumbers by remember { mutableStateOf<List<String>?>(null) }
     var showExportChoiceDialog by remember { mutableStateOf(false) }
-    var selectedExportOption by remember { mutableStateOf(CsvExportOption.ALL) }
 
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { _ ->
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -2106,12 +2117,6 @@ fun ConfigurationScreen(
         val held = checkRoleHeld(context)
         currentRoleHeld = held
         onRoleChanged(held)
-    }
-
-    val exportCsvLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri ->
-        if (uri != null) {
-            onExportNumbers(uri, selectedExportOption)
-        }
     }
 
     val importCsvLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -2135,7 +2140,7 @@ fun ConfigurationScreen(
     if (showExportChoiceDialog) {
         AlertDialog(
             onDismissRequest = { showExportChoiceDialog = false },
-            icon = { Icon(Icons.Default.FileUpload, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+            icon = { Icon(Icons.Default.Share, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
             title = { Text(stringResource(R.string.export_target_dialog_title), fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -2146,34 +2151,37 @@ fun ConfigurationScreen(
                     Button(
                         onClick = {
                             soundManager?.playClick()
-                            selectedExportOption = CsvExportOption.ALL
                             showExportChoiceDialog = false
-                            exportCsvLauncher.launch("blocky_all_numbers.csv")
+                            onExportNumbers(CsvExportOption.ALL)
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
+                        Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
                         Text(stringResource(R.string.export_option_both))
                     }
                     OutlinedButton(
                         onClick = {
                             soundManager?.playClick()
-                            selectedExportOption = CsvExportOption.BLOCKED_ONLY
                             showExportChoiceDialog = false
-                            exportCsvLauncher.launch("blocky_blocked_numbers.csv")
+                            onExportNumbers(CsvExportOption.BLOCKED_ONLY)
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
+                        Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
                         Text(stringResource(R.string.export_option_blocked))
                     }
                     OutlinedButton(
                         onClick = {
                             soundManager?.playClick()
-                            selectedExportOption = CsvExportOption.WHITELIST_ONLY
                             showExportChoiceDialog = false
-                            exportCsvLauncher.launch("blocky_whitelist_numbers.csv")
+                            onExportNumbers(CsvExportOption.WHITELIST_ONLY)
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
+                        Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
                         Text(stringResource(R.string.export_option_whitelist))
                     }
                 }
@@ -2374,7 +2382,7 @@ fun ConfigurationScreen(
                         },
                         modifier = Modifier.weight(1f)
                     ) {
-                        Icon(Icons.Default.FileUpload, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(stringResource(R.string.export_csv_btn), fontSize = 11.sp, maxLines = 1)
                     }

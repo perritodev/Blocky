@@ -132,11 +132,12 @@
     <string name="import_target_dialog_desc">Choose which list you want to import the %d numbers into:</string>
     <string name="import_to_blocked">Blocked List</string>
     <string name="import_to_whitelist">Whitelist</string>
-    <string name="export_target_dialog_title">Export Numbers (CSV)</string>
-    <string name="export_target_dialog_desc">Choose which numbers you want to export to a CSV file:</string>
+    <string name="export_target_dialog_title">Share / Export (CSV)</string>
+    <string name="export_target_dialog_desc">Choose which numbers you want to share or export via CSV:</string>
     <string name="export_option_both">All (Blocked &amp; Whitelist)</string>
     <string name="export_option_blocked">Blocked Numbers Only</string>
     <string name="export_option_whitelist">Whitelist Numbers Only</string>
+    <string name="share_csv_chooser_title">Share Numbers CSV</string>
 
     <!-- Permissions Health Hub -->
     <string name="permissions_health_title">Protection Setup Status</string>

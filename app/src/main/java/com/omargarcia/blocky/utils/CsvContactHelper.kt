@@ -1,10 +1,14 @@
 package com.omargarcia.blocky.utils
 
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
+import androidx.core.content.FileProvider
 import com.omargarcia.blocky.data.BlockedCall
 import com.omargarcia.blocky.data.WhitelistedNumber
 import java.io.BufferedReader
+import java.io.File
+import java.io.FileOutputStream
 import java.io.InputStream
 import java.io.InputStreamReader
 import java.io.OutputStream
@@ -18,6 +22,47 @@ enum class CsvExportOption {
 }
 
 object CsvContactHelper {
+
+    /**
+     * Exports Blocked calls and Whitelisted numbers to a cached file and opens the Android Share Sheet.
+     */
+    fun exportAndShareCsv(
+        context: Context,
+        filename: String,
+        blockedList: List<BlockedCall>,
+        whitelist: List<WhitelistedNumber>,
+        exportOption: CsvExportOption = CsvExportOption.ALL,
+        chooserTitle: String = "Share CSV"
+    ): Int {
+        val exportDir = File(context.cacheDir, "csv_exports")
+        if (!exportDir.exists()) {
+            exportDir.mkdirs()
+        }
+        val file = File(exportDir, filename)
+        var count = 0
+        FileOutputStream(file).use { fos ->
+            count = exportToGoogleCsv(fos, blockedList, whitelist, exportOption)
+        }
+
+        val contentUri: Uri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            file
+        )
+
+        val sendIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/csv"
+            putExtra(Intent.EXTRA_STREAM, contentUri)
+            putExtra(Intent.EXTRA_SUBJECT, file.nameWithoutExtension)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
+        val chooserIntent = Intent.createChooser(sendIntent, chooserTitle).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        context.startActivity(chooserIntent)
+        return count
+    }
 
     /**
      * Exports Blocked calls and Whitelisted numbers to a Google Contacts compatible CSV format.
