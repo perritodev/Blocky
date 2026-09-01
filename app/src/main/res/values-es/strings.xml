@@ -110,15 +110,44 @@
     <string name="missing_setup_warning">Configuración incompleta. Algunas funciones podrían no servir.</string>
     <string name="finish_setup_btn">Terminar Configuración</string>
 
-    <string name="support_tab">Soporte</string>
-    <string name="support_title">Solución de Problemas y Soporte</string>
-    <string name="support_desc">¿Tienes problemas o alguna sugerencia? Estamos para ayudarte.</string>
+    <string name="configuration_tab">Configuración</string>
+    <string name="configuration_title">Configuración y Ajustes</string>
+    <string name="configuration_desc">Gestiona ajustes de la app, permisos y respaldos de listas.</string>
     <string name="contact_btn">Contactar al Desarrollador</string>
     <string name="reliability_guide_title">Mejorar la Fiabilidad</string>
     <string name="reliability_guide_desc">Android a veces detiene apps en segundo plano para ahorrar batería. Para que Blocky filtre cada llamada, debe configurarse como \"Sin Restricciones\" en los ajustes de batería.</string>
     <string name="configure_battery_btn">Optimizar Trabajo en Segundo Plano</string>
-    <string name="support_email_subject">Solicitud de Soporte - Blocky</string>
+    <string name="support_email_subject">Soporte y Comentarios - Blocky</string>
     <string name="device_info_header">\n\n--- Info del Dispositivo (No borrar) ---\n</string>
+
+    <!-- CSV Import & Export -->
+    <string name="csv_backup_title">Respaldar y Restaurar Listas</string>
+    <string name="csv_backup_desc">Importa o exporta tus números bloqueados y permitidos usando un archivo CSV compatible con Contactos de Google.</string>
+    <string name="export_csv_btn">Exportar Números (CSV)</string>
+    <string name="import_csv_btn">Importar Números (CSV)</string>
+    <string name="csv_export_success">%d números exportados a CSV con éxito</string>
+    <string name="csv_import_success">%d números importados con éxito</string>
+    <string name="csv_import_empty">No se encontraron números válidos en el archivo CSV seleccionado</string>
+    <string name="import_target_dialog_title">Importar Números a</string>
+    <string name="import_target_dialog_desc">Elige a qué lista deseas importar los %d números:</string>
+    <string name="import_to_blocked">Lista de Bloqueados</string>
+    <string name="import_to_whitelist">Lista de Permitidos</string>
+
+    <!-- Permissions Health Hub -->
+    <string name="permissions_health_title">Estado de la Configuración</string>
+    <string name="permissions_health_desc">Comprueba y activa cualquier protección o permiso faltante.</string>
+    <string name="permissions_all_ok">Todos los permisos y protecciones están activos.</string>
+
+    <!-- Quick Add Dialog -->
+    <string name="add_number_dialog_title_blocked">Añadir a Lista de Bloqueados</string>
+    <string name="add_number_dialog_title_whitelist">Añadir a Permitidos</string>
+    <string name="add_number_input_hint">Ingresa el número de teléfono</string>
+
+    <!-- Threshold Interval -->
+    <string name="threshold_interval_label">Intervalo de tiempo: %d min</string>
+    <string name="threshold_interval_input_label">Ventana de tiempo en minutos (ej. 5, 15, 30):</string>
+    <string name="threshold_calls_input_label">Intentos de llamada requeridos (ej. 2, 3, 5):</string>
+    <string name="toast_invalid_interval">Ingresa un intervalo válido (1 a 180 minutos)</string>
 
     <!-- Google Play Compliance & Prominent Disclosures -->
     <string name="disclosure_title">Divulgación de Privacidad y Seguridad</string>

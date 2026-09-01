@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
@@ -15,6 +16,7 @@ import android.provider.ContactsContract
 import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.core.net.toUri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import android.hardware.Sensor
@@ -75,6 +77,10 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
+import com.omargarcia.blocky.utils.CsvContactHelper
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+
 val LocalSoundManager = compositionLocalOf<SoundManager?> { null }
 
 class MainActivity : ComponentActivity() {
@@ -123,6 +129,7 @@ fun MainContainer() {
     var isEnabled by remember { mutableStateOf(settingsManager.isBlockingEnabled) }
     var currentLang by remember { mutableStateOf(settingsManager.languageCode) }
     var repeatCallThreshold by remember { mutableIntStateOf(settingsManager.repeatCallThreshold) }
+    var repeatCallIntervalMinutes by remember { mutableIntStateOf(settingsManager.repeatCallIntervalMinutes) }
     
     val isProtectionActive = roleHeldState && isEnabled
 
@@ -166,6 +173,7 @@ fun MainContainer() {
                     whitelist = whitelist,
                     currentLang = currentLang,
                     repeatCallThreshold = repeatCallThreshold,
+                    repeatCallIntervalMinutes = repeatCallIntervalMinutes,
                     onRoleChanged = { roleHeldState = it },
                     onEnabledChanged = {
                         isEnabled = it
@@ -186,6 +194,10 @@ fun MainContainer() {
                     onThresholdChanged = { threshold ->
                         repeatCallThreshold = threshold
                         settingsManager.repeatCallThreshold = threshold
+                    },
+                    onIntervalMinutesChanged = { interval ->
+                        repeatCallIntervalMinutes = interval
+                        settingsManager.repeatCallIntervalMinutes = interval
                     },
                 onUnblockNumber = { numberObj ->
                     scope.launch { 
@@ -238,6 +250,72 @@ fun MainContainer() {
                 },
                 onRemoveFromWhitelist = { number ->
                     scope.launch { whitelistDao.delete(number) }
+                },
+                onAddBlockedManualNumber = { num ->
+                    scope.launch {
+                        permanentBlockDao.insert(PermanentBlockedNumber(phoneNumber = num))
+                        blockLogDao.insert(BlockedCall(phoneNumber = num))
+                        whitelistDao.deleteByNumber(num)
+                        unblockedDao.deleteByNumber(num)
+                        Toast.makeText(context, R.string.toast_blocked, Toast.LENGTH_SHORT).show()
+                    }
+                },
+                onAddWhitelistManualNumber = { num ->
+                    scope.launch {
+                        whitelistDao.insert(WhitelistedNumber(phoneNumber = num))
+                        unblockedDao.insert(UnblockedNumber(phoneNumber = num))
+                        permanentBlockDao.deleteByNumber(num)
+                        Toast.makeText(context, R.string.toast_whitelisted, Toast.LENGTH_SHORT).show()
+                    }
+                },
+                onImportNumbersToBlocked = { numbers ->
+                    scope.launch {
+                        var count = 0
+                        withContext(Dispatchers.IO) {
+                            for (num in numbers) {
+                                if (num.isNotBlank()) {
+                                    permanentBlockDao.insert(PermanentBlockedNumber(phoneNumber = num))
+                                    blockLogDao.insert(BlockedCall(phoneNumber = num))
+                                    whitelistDao.deleteByNumber(num)
+                                    count++
+                                }
+                            }
+                        }
+                        Toast.makeText(context, context.getString(R.string.csv_import_success, count), Toast.LENGTH_SHORT).show()
+                    }
+                },
+                onImportNumbersToWhitelist = { numbers ->
+                    scope.launch {
+                        var count = 0
+                        withContext(Dispatchers.IO) {
+                            for (num in numbers) {
+                                if (num.isNotBlank()) {
+                                    whitelistDao.insert(WhitelistedNumber(phoneNumber = num))
+                                    unblockedDao.insert(UnblockedNumber(phoneNumber = num))
+                                    permanentBlockDao.deleteByNumber(num)
+                                    count++
+                                }
+                            }
+                        }
+                        Toast.makeText(context, context.getString(R.string.csv_import_success, count), Toast.LENGTH_SHORT).show()
+                    }
+                },
+                onExportNumbersToCsv = { uri ->
+                    scope.launch {
+                        var count = 0
+                        withContext(Dispatchers.IO) {
+                            try {
+                                context.contentResolver.openOutputStream(uri)?.use { os ->
+                                    val allBlocked = blockLogDao.getAllList()
+                                    val allWhitelist = whitelistDao.getAllList()
+                                    count = CsvContactHelper.exportToGoogleCsv(os, allBlocked, allWhitelist)
+                                }
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
+                        }
+                        Toast.makeText(context, context.getString(R.string.csv_export_success, count), Toast.LENGTH_SHORT).show()
+                    }
                 }
             ) {
                 isOnboardingCompleted = false
@@ -362,12 +440,30 @@ fun OnboardingScreen(
         PrivacyPolicyDialog(onDismiss = { showPrivacyPolicyModal = false })
     }
 
+    val parallaxOffset by rememberParallaxOffset(maxOffsetPx = 45f)
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .safeDrawingPadding(),
-        contentAlignment = Alignment.Center
+            .background(MaterialTheme.colorScheme.background)
     ) {
+        Image(
+            painter = painterResource(R.drawable.bg_app_pattern),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .fillMaxSize()
+                .scale(1.22f)
+                .offset { IntOffset(parallaxOffset.x.roundToInt(), parallaxOffset.y.roundToInt()) },
+            alpha = 0.30f
+        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .safeDrawingPadding(),
+            contentAlignment = Alignment.Center
+        ) {
         Column(
             modifier = Modifier
                 .widthIn(max = 540.dp)
@@ -485,6 +581,7 @@ fun OnboardingScreen(
             }
         }
     }
+}
 }
 
 @Composable
@@ -612,11 +709,13 @@ fun MainContent(
     whitelist: List<WhitelistedNumber>,
     currentLang: String,
     repeatCallThreshold: Int = 1,
+    repeatCallIntervalMinutes: Int = 15,
     onRoleChanged: (Boolean) -> Unit,
     onEnabledChanged: (Boolean) -> Unit,
     onSoundEnabledChanged: (Boolean) -> Unit,
     onLanguageChanged: (String) -> Unit,
     onThresholdChanged: (Int) -> Unit = {},
+    onIntervalMinutesChanged: (Int) -> Unit = {},
     onUnblockNumber: (BlockedCall) -> Unit,
     onUnblockAll: () -> Unit,
     onAddToWhitelistFromBlocked: (BlockedCall) -> Unit,
@@ -624,6 +723,11 @@ fun MainContent(
     onDeleteBlockedPermanent: (BlockedCall) -> Unit,
     onDeleteWhitelistPermanent: (WhitelistedNumber) -> Unit,
     onRemoveFromWhitelist: (WhitelistedNumber) -> Unit,
+    onAddBlockedManualNumber: (String) -> Unit,
+    onAddWhitelistManualNumber: (String) -> Unit,
+    onImportNumbersToBlocked: (List<String>) -> Unit,
+    onImportNumbersToWhitelist: (List<String>) -> Unit,
+    onExportNumbersToCsv: (android.net.Uri) -> Unit,
     onFinishOnboarding: () -> Unit,
 ) {
     val parallaxOffset by rememberParallaxOffset(maxOffsetPx = 45f)
@@ -733,8 +837,8 @@ fun MainContent(
                     }
                 )
                 NavigationBarItem(
-                    icon = { Icon(Icons.AutoMirrored.Filled.Help, null) },
-                    label = { Text(stringResource(R.string.support_tab)) },
+                    icon = { Icon(Icons.Default.Settings, null) },
+                    label = { Text(stringResource(R.string.configuration_tab)) },
                     selected = selectedTab == 3,
                     onClick = {
                         soundManager?.playClick()
@@ -781,25 +885,36 @@ fun MainContent(
                                 currentLang = currentLang,
                                 onLanguageChanged = onLanguageChanged,
                                 repeatCallThreshold = repeatCallThreshold,
+                                repeatCallIntervalMinutes = repeatCallIntervalMinutes,
                                 onThresholdChanged = onThresholdChanged,
+                                onIntervalMinutesChanged = onIntervalMinutesChanged,
                             )
                             1 -> BlockedListScreen(
                                 blockedList = blockedList,
                                 onUnblock = onUnblockNumber,
                                 onUnblockAll = onUnblockAll,
                                 onWhitelist = onAddToWhitelistFromBlocked,
-                                onDeletePermanent = onDeleteBlockedPermanent
+                                onDeletePermanent = onDeleteBlockedPermanent,
+                                onAddManualNumber = onAddBlockedManualNumber
                             )
                             2 -> WhitelistScreen(
                                 whitelist = whitelist,
                                 onRemove = onRemoveFromWhitelist,
                                 onDeletePermanent = onDeleteWhitelistPermanent,
-                                onBlockNumber = onAddToBlockedFromWhitelist
+                                onBlockNumber = onAddToBlockedFromWhitelist,
+                                onAddManualNumber = onAddWhitelistManualNumber
                             )
-                            3 -> TroubleshootingScreen(onShowPrivacyPolicy = {
-                                soundManager?.playClick()
-                                showPrivacyPolicyModal = true
-                            })
+                            3 -> ConfigurationScreen(
+                                roleHeld = roleHeld,
+                                onRoleChanged = onRoleChanged,
+                                onShowPrivacyPolicy = {
+                                    soundManager?.playClick()
+                                    showPrivacyPolicyModal = true
+                                },
+                                onExportNumbers = onExportNumbersToCsv,
+                                onImportBlocked = onImportNumbersToBlocked,
+                                onImportWhitelist = onImportNumbersToWhitelist
+                            )
                         }
                     }
                 }
@@ -820,7 +935,9 @@ fun BlockyScreen(
     onLanguageChanged: (String) -> Unit,
     blockedCount: Int = 0,
     repeatCallThreshold: Int = 1,
+    repeatCallIntervalMinutes: Int = 15,
     onThresholdChanged: (Int) -> Unit = {},
+    onIntervalMinutesChanged: (Int) -> Unit = {},
 ) {
     val context = LocalContext.current
     val soundManager = LocalSoundManager.current
@@ -829,6 +946,7 @@ fun BlockyScreen(
     }
     var showCustomThresholdDialog by remember { mutableStateOf(false) }
     var customInputText by remember { mutableStateOf("") }
+    var customIntervalText by remember { mutableStateOf("") }
     var showThankYouDialog by remember { mutableStateOf(false) }
 
     if (showThankYouDialog) {
@@ -895,6 +1013,11 @@ fun BlockyScreen(
                         text = stringResource(R.string.custom_threshold_dialog_desc),
                         style = MaterialTheme.typography.bodyMedium
                     )
+                    Text(
+                        text = stringResource(R.string.threshold_calls_input_label),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
                     OutlinedTextField(
                         value = customInputText,
                         onValueChange = { input ->
@@ -908,15 +1031,37 @@ fun BlockyScreen(
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth()
                     )
+                    Text(
+                        text = stringResource(R.string.threshold_interval_input_label),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    OutlinedTextField(
+                        value = customIntervalText,
+                        onValueChange = { input ->
+                            if (input.all { it.isDigit() } && input.length <= 3) {
+                                customIntervalText = input
+                            }
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        placeholder = { Text("15") },
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             },
             confirmButton = {
                 Button(
                     onClick = {
                         val num = customInputText.toIntOrNull()
+                        val interval = customIntervalText.toIntOrNull()
                         if (num != null && num >= 2) {
                             soundManager?.playClick()
                             onThresholdChanged(num)
+                            if (interval != null && interval in 1..180) {
+                                onIntervalMinutesChanged(interval)
+                            }
                             showCustomThresholdDialog = false
                         } else {
                             Toast.makeText(context, R.string.toast_invalid_threshold, Toast.LENGTH_SHORT).show()
@@ -1085,7 +1230,11 @@ fun BlockyScreen(
                     Spacer(modifier = Modifier.height(2.dp))
 
                     Text(
-                        text = stringResource(R.string.repeat_call_threshold_desc),
+                        text = if (repeatCallThreshold > 1) {
+                            stringResource(R.string.threshold_interval_label, repeatCallIntervalMinutes)
+                        } else {
+                            stringResource(R.string.repeat_call_threshold_desc)
+                        },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1126,6 +1275,7 @@ fun BlockyScreen(
                             onClick = {
                                 soundManager?.playClick()
                                 customInputText = if (repeatCallThreshold > 1) repeatCallThreshold.toString() else "2"
+                                customIntervalText = repeatCallIntervalMinutes.toString()
                                 showCustomThresholdDialog = true
                             },
                             leadingIcon = {
@@ -1194,13 +1344,55 @@ fun BlockedListScreen(
     onUnblock: (BlockedCall) -> Unit,
     onUnblockAll: () -> Unit,
     onWhitelist: (BlockedCall) -> Unit,
-    onDeletePermanent: (BlockedCall) -> Unit
+    onDeletePermanent: (BlockedCall) -> Unit,
+    onAddManualNumber: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
     val soundManager = LocalSoundManager.current
     var searchQuery by remember { mutableStateOf("") }
     var selectedNumberForDetails by remember { mutableStateOf<BlockedCall?>(null) }
     var showUnblockAllDialog by remember { mutableStateOf(false) }
+    var showAddDialog by remember { mutableStateOf(false) }
+    var inputNumber by remember { mutableStateOf("") }
+
+    if (showAddDialog) {
+        AlertDialog(
+            onDismissRequest = { showAddDialog = false },
+            icon = { Icon(Icons.Default.Block, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+            title = { Text(stringResource(R.string.add_number_dialog_title_blocked), fontWeight = FontWeight.Bold) },
+            text = {
+                OutlinedTextField(
+                    value = inputNumber,
+                    onValueChange = { inputNumber = it },
+                    label = { Text(stringResource(R.string.add_number_input_hint)) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val trimmed = inputNumber.trim()
+                        if (trimmed.length >= 3) {
+                            soundManager?.playClick()
+                            onAddManualNumber(trimmed)
+                            showAddDialog = false
+                            inputNumber = ""
+                        }
+                    }
+                ) {
+                    Text(stringResource(R.string.add_btn))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAddDialog = false }) {
+                    Text(stringResource(R.string.cancel_btn))
+                }
+            }
+        )
+    }
 
     if (showUnblockAllDialog) {
         AlertDialog(
@@ -1278,26 +1470,42 @@ fun BlockedListScreen(
             )
         }
 
-        // Search Bar
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = { searchQuery = it },
-            placeholder = { Text(stringResource(R.string.search_hint)) },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-            trailingIcon = {
-                if (searchQuery.isNotBlank()) {
-                    IconButton(onClick = {
-                        soundManager?.playClick()
-                        searchQuery = ""
-                    }) {
-                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.clear_search))
-                    }
-                }
-            },
+        // Search Bar with Quick Add Button
+        Row(
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            shape = RoundedCornerShape(12.dp)
-        )
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                placeholder = { Text(stringResource(R.string.search_hint)) },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                trailingIcon = {
+                    if (searchQuery.isNotBlank()) {
+                        IconButton(onClick = {
+                            soundManager?.playClick()
+                            searchQuery = ""
+                        }) {
+                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.clear_search))
+                        }
+                    }
+                },
+                modifier = Modifier.weight(1f),
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp)
+            )
+            FilledTonalIconButton(
+                onClick = {
+                    soundManager?.playClick()
+                    inputNumber = ""
+                    showAddDialog = true
+                },
+                modifier = Modifier.size(52.dp)
+            ) {
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_btn), tint = MaterialTheme.colorScheme.primary)
+            }
+        }
 
         Spacer(modifier = Modifier.height(10.dp))
 
@@ -1351,7 +1559,7 @@ fun BlockedListScreen(
                             modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 2.dp)
                         ) {
                             Text(
-                                text = dateHeader,
+                                text = dateHeader.uppercase(Locale.getDefault()),
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White,
@@ -1426,12 +1634,54 @@ fun WhitelistScreen(
     whitelist: List<WhitelistedNumber>,
     onRemove: (WhitelistedNumber) -> Unit,
     onDeletePermanent: (WhitelistedNumber) -> Unit,
-    onBlockNumber: (WhitelistedNumber) -> Unit
+    onBlockNumber: (WhitelistedNumber) -> Unit,
+    onAddManualNumber: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
     val soundManager = LocalSoundManager.current
     var searchQuery by remember { mutableStateOf("") }
     var selectedNumberForDetails by remember { mutableStateOf<WhitelistedNumber?>(null) }
+    var showAddDialog by remember { mutableStateOf(false) }
+    var inputNumber by remember { mutableStateOf("") }
+
+    if (showAddDialog) {
+        AlertDialog(
+            onDismissRequest = { showAddDialog = false },
+            icon = { Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF4CAF50)) },
+            title = { Text(stringResource(R.string.add_number_dialog_title_whitelist), fontWeight = FontWeight.Bold) },
+            text = {
+                OutlinedTextField(
+                    value = inputNumber,
+                    onValueChange = { inputNumber = it },
+                    label = { Text(stringResource(R.string.add_number_input_hint)) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val trimmed = inputNumber.trim()
+                        if (trimmed.length >= 3) {
+                            soundManager?.playClick()
+                            onAddManualNumber(trimmed)
+                            showAddDialog = false
+                            inputNumber = ""
+                        }
+                    }
+                ) {
+                    Text(stringResource(R.string.add_btn))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAddDialog = false }) {
+                    Text(stringResource(R.string.cancel_btn))
+                }
+            }
+        )
+    }
 
     val filteredList = remember(whitelist, searchQuery) {
         if (searchQuery.isBlank()) {
@@ -1461,26 +1711,42 @@ fun WhitelistScreen(
             )
         }
 
-        // Search Bar
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = { searchQuery = it },
-            placeholder = { Text(stringResource(R.string.search_hint)) },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-            trailingIcon = {
-                if (searchQuery.isNotBlank()) {
-                    IconButton(onClick = {
-                        soundManager?.playClick()
-                        searchQuery = ""
-                    }) {
-                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.clear_search))
-                    }
-                }
-            },
+        // Search Bar with Quick Add Button
+        Row(
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            shape = RoundedCornerShape(12.dp)
-        )
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                placeholder = { Text(stringResource(R.string.search_hint)) },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                trailingIcon = {
+                    if (searchQuery.isNotBlank()) {
+                        IconButton(onClick = {
+                            soundManager?.playClick()
+                            searchQuery = ""
+                        }) {
+                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.clear_search))
+                        }
+                    }
+                },
+                modifier = Modifier.weight(1f),
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp)
+            )
+            FilledTonalIconButton(
+                onClick = {
+                    soundManager?.playClick()
+                    inputNumber = ""
+                    showAddDialog = true
+                },
+                modifier = Modifier.size(52.dp)
+            ) {
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_btn), tint = MaterialTheme.colorScheme.primary)
+            }
+        }
 
         Spacer(modifier = Modifier.height(12.dp))
 
@@ -1799,10 +2065,102 @@ fun DetailInfoRow(icon: ImageVector, label: String, value: String) {
 }
 
 @Composable
-fun TroubleshootingScreen(onShowPrivacyPolicy: () -> Unit = {}) {
+fun ConfigurationScreen(
+    roleHeld: Boolean = true,
+    onRoleChanged: (Boolean) -> Unit = {},
+    onShowPrivacyPolicy: () -> Unit = {},
+    onExportNumbers: (android.net.Uri) -> Unit = {},
+    onImportBlocked: (List<String>) -> Unit = {},
+    onImportWhitelist: (List<String>) -> Unit = {}
+) {
     val context = LocalContext.current
+    val soundManager = LocalSoundManager.current
+    val isInPreview = LocalInspectionMode.current
     val scrollState = rememberScrollState()
-    
+
+    var notificationState by remember {
+        mutableStateOf(
+            if (isInPreview) true
+            else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) checkPermission(context, Manifest.permission.POST_NOTIFICATIONS)
+            else true
+        )
+    }
+    var contactsState by remember { mutableStateOf(if (isInPreview) true else checkPermission(context, Manifest.permission.READ_CONTACTS)) }
+    var batteryState by remember { mutableStateOf(if (isInPreview) true else isIgnoringBatteryOptimizations(context)) }
+    var currentRoleHeld by remember { mutableStateOf(roleHeld) }
+
+    // Dialog for CSV target list selection
+    var pendingImportNumbers by remember { mutableStateOf<List<String>?>(null) }
+
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { _ ->
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            notificationState = checkPermission(context, Manifest.permission.POST_NOTIFICATIONS)
+        }
+        contactsState = checkPermission(context, Manifest.permission.READ_CONTACTS)
+    }
+
+    val roleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { _ ->
+        val held = checkRoleHeld(context)
+        currentRoleHeld = held
+        onRoleChanged(held)
+    }
+
+    val exportCsvLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri ->
+        if (uri != null) {
+            onExportNumbers(uri)
+        }
+    }
+
+    val importCsvLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            try {
+                context.contentResolver.openInputStream(uri)?.use { stream ->
+                    val numbers = CsvContactHelper.parseCsvForPhoneNumbers(stream)
+                    if (numbers.isNotEmpty()) {
+                        pendingImportNumbers = numbers
+                    } else {
+                        Toast.makeText(context, R.string.csv_import_empty, Toast.LENGTH_LONG).show()
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Toast.makeText(context, "Error reading CSV file", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    if (pendingImportNumbers != null) {
+        val numbers = pendingImportNumbers ?: emptyList()
+        AlertDialog(
+            onDismissRequest = { pendingImportNumbers = null },
+            icon = { Icon(Icons.Default.FileDownload, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+            title = { Text(stringResource(R.string.import_target_dialog_title), fontWeight = FontWeight.Bold) },
+            text = { Text(stringResource(R.string.import_target_dialog_desc, numbers.size)) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        soundManager?.playClick()
+                        onImportBlocked(numbers)
+                        pendingImportNumbers = null
+                    }
+                ) {
+                    Text(stringResource(R.string.import_to_blocked))
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = {
+                        soundManager?.playClick()
+                        onImportWhitelist(numbers)
+                        pendingImportNumbers = null
+                    }
+                ) {
+                    Text(stringResource(R.string.import_to_whitelist))
+                }
+            }
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -1811,24 +2169,182 @@ fun TroubleshootingScreen(onShowPrivacyPolicy: () -> Unit = {}) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = stringResource(R.string.support_title),
+            text = stringResource(R.string.configuration_title),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
             color = Color.White,
-            modifier = Modifier.padding(bottom = 8.dp)
+            modifier = Modifier.padding(bottom = 6.dp)
         )
         Text(
-            text = stringResource(R.string.support_desc),
-            style = MaterialTheme.typography.bodyLarge,
+            text = stringResource(R.string.configuration_desc),
+            style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(bottom = 24.dp)
+            color = Color.White.copy(alpha = 0.85f),
+            modifier = Modifier.padding(bottom = 20.dp)
         )
 
+        // 1. Setup Status & Permissions Checklist
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)),
+            shape = RoundedCornerShape(14.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Shield,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        text = stringResource(R.string.permissions_health_title),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+                Text(
+                    text = stringResource(R.string.permissions_health_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.75f)
+                )
+
+                // Item 1: Call Screening Role
+                PermissionCheckRow(
+                    title = stringResource(R.string.step_role_title),
+                    isGranted = currentRoleHeld,
+                    btnText = stringResource(R.string.set_default_app),
+                    onAction = {
+                        soundManager?.playClick()
+                        val roleManager = context.getSystemService(Context.ROLE_SERVICE) as? RoleManager
+                        roleManager?.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING)?.let { roleLauncher.launch(it) }
+                    }
+                )
+
+                // Item 2: Contacts Permission
+                PermissionCheckRow(
+                    title = stringResource(R.string.step_contacts_title),
+                    isGranted = contactsState,
+                    btnText = stringResource(R.string.grant_permission),
+                    onAction = {
+                        soundManager?.playClick()
+                        permissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+                    }
+                )
+
+                // Item 3: Notifications Permission
+                PermissionCheckRow(
+                    title = stringResource(R.string.step_notification_title),
+                    isGranted = notificationState,
+                    btnText = stringResource(R.string.grant_permission),
+                    onAction = {
+                        soundManager?.playClick()
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        }
+                    }
+                )
+
+                // Item 4: Battery Optimization Exemption
+                PermissionCheckRow(
+                    title = stringResource(R.string.step_battery_title),
+                    isGranted = batteryState,
+                    btnText = stringResource(R.string.grant_permission),
+                    onAction = {
+                        soundManager?.playClick()
+                        val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                        try {
+                            context.startActivity(intent)
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // 2. CSV Backup & Restore Card
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)),
+            shape = RoundedCornerShape(14.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.SyncAlt,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        text = stringResource(R.string.csv_backup_title),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+                Text(
+                    text = stringResource(R.string.csv_backup_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.75f)
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            soundManager?.playClick()
+                            exportCsvLauncher.launch("blocky_numbers_export.csv")
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Default.FileUpload, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(stringResource(R.string.export_csv_btn), fontSize = 11.sp, maxLines = 1)
+                    }
+
+                    OutlinedButton(
+                        onClick = {
+                            soundManager?.playClick()
+                            importCsvLauncher.launch(arrayOf("text/*", "text/csv", "application/csv"))
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Default.FileDownload, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(stringResource(R.string.import_csv_btn), fontSize = 11.sp, maxLines = 1)
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // 3. Contact Developer Button
         val deviceInfoHeader = stringResource(R.string.device_info_header)
         val supportSubject = stringResource(R.string.support_email_subject)
         
         Button(
             onClick = {
+                soundManager?.playClick()
                 val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
                 val appVersion = "${packageInfo.versionName} (${packageInfo.longVersionCode})"
                 
@@ -1839,9 +2355,12 @@ fun TroubleshootingScreen(onShowPrivacyPolicy: () -> Unit = {}) {
                     Android: ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})
                 """.trimIndent()
 
+                val email = "prismaticamedia@gmail.com"
+                val uriString = "mailto:$email?subject=${Uri.encode(supportSubject)}&body=${Uri.encode(deviceInfo)}"
+
                 val intent = Intent(Intent.ACTION_SENDTO).apply {
-                    data = "mailto:".toUri()
-                    putExtra(Intent.EXTRA_EMAIL, arrayOf("prismaticamedia@gmail.com"))
+                    data = uriString.toUri()
+                    putExtra(Intent.EXTRA_EMAIL, arrayOf(email))
                     putExtra(Intent.EXTRA_SUBJECT, supportSubject)
                     putExtra(Intent.EXTRA_TEXT, deviceInfo)
                 }
@@ -1859,8 +2378,9 @@ fun TroubleshootingScreen(onShowPrivacyPolicy: () -> Unit = {}) {
             Text(stringResource(R.string.contact_btn))
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
+        // 4. Privacy Policy Button
         OutlinedButton(
             onClick = onShowPrivacyPolicy,
             modifier = Modifier.fillMaxWidth()
@@ -1870,18 +2390,17 @@ fun TroubleshootingScreen(onShowPrivacyPolicy: () -> Unit = {}) {
             Text(stringResource(R.string.privacy_policy_title))
         }
 
-        Spacer(modifier = Modifier.height(36.dp))
+        Spacer(modifier = Modifier.height(28.dp))
 
-        val isInPreview = LocalInspectionMode.current
         val appVersionStr = remember(isInPreview) {
             if (isInPreview) {
-                "v1.0.15"
+                "v1.0.16"
             } else {
                 try {
                     val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
                     "v${pInfo.versionName}"
                 } catch (_: Exception) {
-                    "v1.0.15"
+                    "v1.0.16"
                 }
             }
         }
@@ -1893,6 +2412,53 @@ fun TroubleshootingScreen(onShowPrivacyPolicy: () -> Unit = {}) {
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(bottom = 24.dp)
         )
+    }
+}
+
+@Composable
+fun PermissionCheckRow(
+    title: String,
+    isGranted: Boolean,
+    btnText: String,
+    onAction: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.weight(1f)
+        ) {
+            Icon(
+                imageVector = if (isGranted) Icons.Default.CheckCircle else Icons.Default.Cancel,
+                contentDescription = null,
+                tint = if (isGranted) Color(0xFF4CAF50) else MaterialTheme.colorScheme.error,
+                modifier = Modifier.size(18.dp)
+            )
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.White
+            )
+        }
+        if (!isGranted) {
+            TextButton(
+                onClick = onAction,
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+            ) {
+                Text(btnText, fontSize = 12.sp)
+            }
+        } else {
+            Text(
+                text = stringResource(R.string.permission_granted),
+                style = MaterialTheme.typography.labelSmall,
+                color = Color(0xFF4CAF50),
+                modifier = Modifier.padding(end = 4.dp)
+            )
+        }
     }
 }
 
@@ -2035,6 +2601,7 @@ fun BlockyScreenActivePreview() {
             onLanguageChanged = {},
             blockedCount = 42,
             repeatCallThreshold = 2,
+            repeatCallIntervalMinutes = 15,
         )
     }
 }
@@ -2091,10 +2658,11 @@ fun WhitelistPreview() {
     }
 }
 
-@Preview(showBackground = true, name = "6. Troubleshooting & Support")
+@Preview(showBackground = true, name = "6. Configuration & Settings")
 @Composable
-fun TroubleshootingPreview() {
+fun ConfigurationPreview() {
     BlockyTheme {
-        TroubleshootingScreen()
+        ConfigurationScreen()
     }
 }
+

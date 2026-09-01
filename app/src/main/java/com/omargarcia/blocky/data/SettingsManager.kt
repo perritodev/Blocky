@@ -47,11 +47,18 @@ class SettingsManager(context: Context) {
             prefs.edit { putInt(KEY_REPEAT_CALL_THRESHOLD, value) }
         }
 
+    var repeatCallIntervalMinutes: Int
+        get() = prefs.getInt(KEY_REPEAT_CALL_INTERVAL_MINUTES, 15)
+        set(value) {
+            prefs.edit { putInt(KEY_REPEAT_CALL_INTERVAL_MINUTES, value) }
+        }
+
     companion object {
         private const val KEY_BLOCKING_ENABLED = "blocking_enabled"
         private const val KEY_LANGUAGE_CODE = "language_code"
         private const val KEY_ONBOARDING_COMPLETED = "onboarding_completed"
         private const val KEY_SOUND_ENABLED = "sound_enabled"
         private const val KEY_REPEAT_CALL_THRESHOLD = "repeat_call_threshold"
+        private const val KEY_REPEAT_CALL_INTERVAL_MINUTES = "repeat_call_interval_minutes"
     }
 }

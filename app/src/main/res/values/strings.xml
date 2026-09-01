@@ -110,15 +110,44 @@
     <string name="missing_setup_warning">Setup is incomplete. Some features may not work.</string>
     <string name="finish_setup_btn">Finish Setup</string>
 
-    <string name="support_tab">Support</string>
-    <string name="support_title">Troubleshooting &amp; Support</string>
-    <string name="support_desc">Having issues or have a suggestion? We\'re here to help.</string>
+    <string name="configuration_tab">Configuration</string>
+    <string name="configuration_title">Configuration &amp; Settings</string>
+    <string name="configuration_desc">Manage app settings, permissions, and list backups.</string>
     <string name="contact_btn">Contact Developer</string>
     <string name="reliability_guide_title">Improve Reliability</string>
     <string name="reliability_guide_desc">Android sometimes stops apps in the background to save battery. For Blocky to screen every call, it needs to be set to \"Unrestricted\" in your battery settings.</string>
     <string name="configure_battery_btn">Optimize Background Work</string>
-    <string name="support_email_subject">Blocky Support Request</string>
+    <string name="support_email_subject">Blocky Support &amp; Feedback</string>
     <string name="device_info_header">\n\n--- Device Info (Do not delete) ---\n</string>
+
+    <!-- CSV Import & Export -->
+    <string name="csv_backup_title">Backup &amp; Restore Lists</string>
+    <string name="csv_backup_desc">Import or export your blocked and whitelisted numbers using a Google Contacts compatible CSV file.</string>
+    <string name="export_csv_btn">Export Numbers (CSV)</string>
+    <string name="import_csv_btn">Import Numbers (CSV)</string>
+    <string name="csv_export_success">Exported %d numbers to CSV successfully</string>
+    <string name="csv_import_success">Imported %d numbers successfully</string>
+    <string name="csv_import_empty">No valid numbers found in the selected CSV file</string>
+    <string name="import_target_dialog_title">Import Numbers To</string>
+    <string name="import_target_dialog_desc">Choose which list you want to import the %d numbers into:</string>
+    <string name="import_to_blocked">Blocked List</string>
+    <string name="import_to_whitelist">Whitelist</string>
+
+    <!-- Permissions Health Hub -->
+    <string name="permissions_health_title">Protection Setup Status</string>
+    <string name="permissions_health_desc">Check and activate any missing protections or permissions.</string>
+    <string name="permissions_all_ok">All permissions &amp; protections are active.</string>
+
+    <!-- Quick Add Dialog -->
+    <string name="add_number_dialog_title_blocked">Add to Blocked List</string>
+    <string name="add_number_dialog_title_whitelist">Add to Whitelist</string>
+    <string name="add_number_input_hint">Enter phone number</string>
+
+    <!-- Threshold Interval -->
+    <string name="threshold_interval_label">Time window: %d min</string>
+    <string name="threshold_interval_input_label">Time window in minutes (e.g. 5, 15, 30):</string>
+    <string name="threshold_calls_input_label">Call attempts required (e.g. 2, 3, 5):</string>
+    <string name="toast_invalid_interval">Please enter a valid time window (1 to 180 minutes)</string>
 
     <!-- Google Play Compliance & Prominent Disclosures -->
     <string name="disclosure_title">Privacy &amp; Data Safety Disclosure</string>

@@ -77,8 +77,9 @@ class CallBlockerService : CallScreeningService() {
             // 5. Check repeat caller threshold (if configured > 1)
             val threshold = settingsManager.repeatCallThreshold
             if (threshold > 1) {
-                val fifteenMinutesAgo = System.currentTimeMillis() - (15 * 60 * 1000L)
-                val recentBlockedCalls = historyDao.getBlockedCallsSinceList(fifteenMinutesAgo)
+                val intervalMinutes = settingsManager.repeatCallIntervalMinutes
+                val windowStartTime = System.currentTimeMillis() - (intervalMinutes * 60 * 1000L)
+                val recentBlockedCalls = historyDao.getBlockedCallsSinceList(windowStartTime)
                 val recentMatchingCount = countMatchingCalls(rawNumber, normalizedNumber, recentBlockedCalls)
                 val totalAttempts = recentMatchingCount + 1
                 if (totalAttempts >= threshold) {

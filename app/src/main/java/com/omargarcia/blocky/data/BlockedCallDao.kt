@@ -8,6 +8,9 @@ interface BlockedCallDao {
     @Query("SELECT * FROM blocked_calls ORDER BY timestamp DESC")
     fun getAll(): Flow<List<BlockedCall>>
 
+    @Query("SELECT * FROM blocked_calls ORDER BY timestamp DESC")
+    suspend fun getAllList(): List<BlockedCall>
+
     @Query("SELECT * FROM blocked_calls WHERE timestamp >= :since ORDER BY timestamp DESC")
     fun getBlockedCallsSince(since: Long): Flow<List<BlockedCall>>
 
