@@ -11,7 +11,8 @@ class SoundManager(private val context: Context) {
     private val settingsManager = SettingsManager(context)
     private var soundPool: SoundPool? = null
     private var clickSoundId: Int = 0
-    private var alienSoundId: Int = 0
+    private var alienMediaPlayer: MediaPlayer? = null
+    private var alienFadeJob: Job? = null
     private var mediaPlayer: MediaPlayer? = null
     private var fadeJob: Job? = null
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
@@ -29,7 +30,6 @@ class SoundManager(private val context: Context) {
 
         try {
             clickSoundId = soundPool?.load(context, R.raw.sfx_button_click, 1) ?: 0
-            alienSoundId = soundPool?.load(context, R.raw.alien_sound, 1) ?: 0
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -48,12 +48,52 @@ class SoundManager(private val context: Context) {
 
     fun playAlienSound() {
         if (!settingsManager.isSoundEnabled) return
+        stopAlienSound()
+
         try {
-            if (alienSoundId != 0) {
-                soundPool?.play(alienSoundId, 0.20f, 0.20f, 2, 0, 1.0f)
+            alienMediaPlayer = MediaPlayer.create(context, R.raw.alien_sound)?.apply {
+                isLooping = false
+                setVolume(0.10f, 0.10f)
+                start()
+            }
+
+            // Start fade out at second 3
+            alienFadeJob = scope.launch {
+                delay(3000L) // Wait 3 seconds
+                val fadeDurationMs = 1500L // 1.5-second smooth fade out
+                val steps = 20
+                val stepDelay = fadeDurationMs / steps
+                val initialVol = 0.10f
+
+                for (i in 1..steps) {
+                    delay(stepDelay)
+                    val factor = (steps - i).toFloat() / steps.toFloat()
+                    val currentVol = initialVol * factor
+                    try {
+                        alienMediaPlayer?.setVolume(currentVol, currentVol)
+                    } catch (_: Exception) {
+                        break
+                    }
+                }
+                stopAlienSound()
             }
         } catch (e: Exception) {
             e.printStackTrace()
+        }
+    }
+
+    fun stopAlienSound() {
+        alienFadeJob?.cancel()
+        alienFadeJob = null
+        try {
+            if (alienMediaPlayer?.isPlaying == true) {
+                alienMediaPlayer?.stop()
+            }
+            alienMediaPlayer?.release()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        } finally {
+            alienMediaPlayer = null
         }
     }
 
@@ -110,6 +150,7 @@ class SoundManager(private val context: Context) {
 
     fun release() {
         stopMusic()
+        stopAlienSound()
         scope.cancel()
         soundPool?.release()
         soundPool = null
