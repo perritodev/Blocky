@@ -2,10 +2,10 @@ package com.omargarcia.blocky.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Lighter vibrant blue palette
-val Blue80 = Color(0xFF82B1FF)
-val BlueGrey80 = Color(0xFFB0BEC5)
-val Cyan80 = Color(0xFF80DEEA)
+// Lighter whitish-blue palette
+val Blue80 = Color(0xFFD4E8FF)
+val BlueGrey80 = Color(0xFFC4D8E8)
+val Cyan80 = Color(0xFFD0F0FD)
 
 val Blue40 = Color(0xFF1976D2)
 val BlueGrey40 = Color(0xFF455A64)

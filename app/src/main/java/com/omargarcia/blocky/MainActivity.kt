@@ -1149,7 +1149,7 @@ fun BlockyScreen(
                     fontSize = 66.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = VT323Font,
-                    color = MaterialTheme.colorScheme.secondary
+                    color = MaterialTheme.colorScheme.primary
                 )
                 Text(
                     text = stringResource(R.string.calls_blocked_label),
