@@ -42,7 +42,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
-import androidx.compose.material.icons.automirrored.filled.Help
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.*
@@ -54,7 +53,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -162,6 +160,9 @@ fun MainContainer() {
     val blockedCount by blockLogDao.getTotalBlockedCount().collectAsState(initial = 0)
     val blockedCalls by blockLogDao.getAll().collectAsState(initial = emptyList())
     val whitelist by whitelistDao.getAllWhitelisted().collectAsState(initial = emptyList())
+
+    val csvImportSuccessTemplate = stringResource(R.string.csv_import_success)
+    val shareCsvChooserTitle = stringResource(R.string.share_csv_chooser_title)
 
     CompositionLocalProvider(LocalSoundManager provides soundManager) {
         Crossfade(targetState = isOnboardingCompleted, label = "ScreenTransition") { completed ->
@@ -283,7 +284,7 @@ fun MainContainer() {
                                 }
                             }
                         }
-                        Toast.makeText(context, context.getString(R.string.csv_import_success, count), Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, String.format(csvImportSuccessTemplate, count), Toast.LENGTH_SHORT).show()
                     }
                 },
                 onImportNumbersToWhitelist = { numbers ->
@@ -299,7 +300,7 @@ fun MainContainer() {
                                 }
                             }
                         }
-                        Toast.makeText(context, context.getString(R.string.csv_import_success, count), Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, String.format(csvImportSuccessTemplate, count), Toast.LENGTH_SHORT).show()
                     }
                 },
                 onExportNumbersToCsv = { exportOption ->
@@ -320,7 +321,7 @@ fun MainContainer() {
                                     blockedList = allBlocked,
                                     whitelist = allWhitelist,
                                     exportOption = exportOption,
-                                    chooserTitle = context.getString(R.string.share_csv_chooser_title)
+                                    chooserTitle = shareCsvChooserTitle
                                 )
                             } catch (e: Exception) {
                                 e.printStackTrace()
@@ -1575,7 +1576,7 @@ fun BlockedListScreen(
                             modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 2.dp)
                         ) {
                             Text(
-                                text = dateHeader.uppercase(Locale.getDefault()),
+                                text = dateHeader.uppercase(),
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White,

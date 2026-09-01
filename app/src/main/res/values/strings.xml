@@ -42,14 +42,14 @@
     <string name="sound_disabled">Sounds Muted</string>
 
     <string name="repeat_call_threshold_title">Allowed Calls Threshold</string>
-    <string name="repeat_call_threshold_desc">Allow an unknown number to ring if they call repeatedly within 15 min.</string>
+    <string name="repeat_call_threshold_desc">Allow an unknown number to ring if they call repeatedly within 15 min or custom time interval.</string>
     <string name="threshold_always_block">Always Block</string>
     <string name="threshold_n_calls">%d Calls</string>
     <string name="threshold_custom_btn">Custom (%d Calls)</string>
     <string name="threshold_set_custom_btn">Set Custom Number</string>
     <string name="custom_threshold_dialog_title">Custom Calls Threshold</string>
-    <string name="custom_threshold_dialog_desc">Enter how many times an unknown caller must call within 15 minutes to allow the call to ring:</string>
-    <string name="custom_threshold_hint">Number of calls (e.g. 2, 3, 5)</string>
+    <string name="custom_threshold_dialog_desc">Enter how many times an unknown number must call to allow the call to ring:</string>
+    <string name="custom_threshold_hint">Number of calls</string>
     <string name="save_btn">Save</string>
     <string name="toast_invalid_threshold">Please enter a valid number (2 or more)</string>
 
@@ -151,7 +151,7 @@
 
     <!-- Threshold Interval -->
     <string name="threshold_interval_label">Time window: %d min</string>
-    <string name="threshold_interval_input_label">Time window in minutes (e.g. 5, 15, 30):</string>
+    <string name="threshold_interval_input_label">Time window in minutes:</string>
     <string name="threshold_calls_input_label">Call attempts required (e.g. 2, 3, 5):</string>
     <string name="toast_invalid_interval">Please enter a valid time window (1 to 180 minutes)</string>
 
