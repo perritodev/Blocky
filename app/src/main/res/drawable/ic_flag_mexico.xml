@@ -1,0 +1,39 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="36dp"
+    android:height="24dp"
+    android:viewportWidth="60"
+    android:viewportHeight="40">
+    <!-- Green Stripe (Left) -->
+    <path
+        android:fillColor="#006847"
+        android:pathData="M0,0h20v40h-20z" />
+    <!-- White Stripe (Middle) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M20,0h20v40h-20z" />
+    <!-- Red Stripe (Right) -->
+    <path
+        android:fillColor="#CE1126"
+        android:pathData="M40,0h20v40h-20z" />
+    <!-- Coat of Arms Emblem Motif (Center) -->
+    <!-- Laurel Wreath Garland (Greenish/Gold) -->
+    <path
+        android:fillColor="#155D27"
+        android:pathData="M25,27 C27,31 33,31 35,27 C33,29 27,29 25,27 Z" />
+    <!-- Nopal / Cactus Motif -->
+    <path
+        android:fillColor="#2D7F36"
+        android:pathData="M28,24 C28,26 32,26 32,24 Z" />
+    <!-- Eagle Body & Wings (Brown & Gold) -->
+    <path
+        android:fillColor="#7B4E24"
+        android:pathData="M28,17 C27,15 28,13 30,13 C32,13 33,15 32,17 C34,18 34,21 31,23 C30,24 30,24 29,23 C26,21 26,18 28,17 Z" />
+    <!-- Snake / Serpent Motif (Green) -->
+    <path
+        android:fillColor="#006847"
+        android:pathData="M30,12 C32,11 34,13 32,15 C31,14 31,13 30,12 Z" />
+    <!-- Golden Accent Highlighting -->
+    <path
+        android:fillColor="#F4B400"
+        android:pathData="M29.5,14 A1,1 0 1,0 30.5,14 A1,1 0 1,0 29.5,14 Z" />
+</vector>

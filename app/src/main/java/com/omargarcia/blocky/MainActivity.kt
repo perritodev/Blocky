@@ -29,6 +29,7 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateOffsetAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -392,6 +393,43 @@ fun MainContainer() {
 }
 
 @Composable
+fun LanguageFlagButton(
+    currentLang: String,
+    onLanguageChanged: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val soundManager = LocalSoundManager.current
+    val nextLang = if (currentLang == "en") "es" else "en"
+    val flagRes = if (currentLang == "en") R.drawable.ic_flag_uk else R.drawable.ic_flag_mexico
+    val contentDesc = if (currentLang == "en") "English" else "Español"
+
+    Surface(
+        onClick = {
+            soundManager?.playClick()
+            onLanguageChanged(nextLang)
+        },
+        shape = RoundedCornerShape(10.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)),
+        modifier = modifier
+    ) {
+        Box(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Image(
+                painter = painterResource(flagRes),
+                contentDescription = contentDesc,
+                modifier = Modifier
+                    .size(width = 30.dp, height = 20.dp)
+                    .clip(RoundedCornerShape(3.dp)),
+                contentScale = ContentScale.FillBounds
+            )
+        }
+    }
+}
+
+@Composable
 fun OnboardingScreen(
     currentLang: String,
     onLanguageChanged: (String) -> Unit,
@@ -527,24 +565,10 @@ fun OnboardingScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(
-                        selected = currentLang == "en",
-                        onClick = {
-                            soundManager?.playClick()
-                            onLanguageChanged("en")
-                        },
-                        label = { Text(stringResource(R.string.lang_english)) }
-                    )
-                    FilterChip(
-                        selected = currentLang == "es",
-                        onClick = {
-                            soundManager?.playClick()
-                            onLanguageChanged("es")
-                        },
-                        label = { Text(stringResource(R.string.lang_spanish)) }
-                    )
-                }
+                LanguageFlagButton(
+                    currentLang = currentLang,
+                    onLanguageChanged = onLanguageChanged
+                )
                 IconButton(onClick = {
                     soundManager?.playClick()
                     showPrivacyPolicyModal = true
@@ -555,9 +579,27 @@ fun OnboardingScreen(
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            Icon(imageVector = Icons.Default.Shield, contentDescription = null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.primary)
-            Text(text = stringResource(R.string.welcome_title), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            Text(text = stringResource(R.string.welcome_desc), style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Image(
+                painter = painterResource(R.drawable.ic_blocky_logo),
+                contentDescription = stringResource(R.string.app_name),
+                modifier = Modifier
+                    .size(68.dp)
+                    .clip(RoundedCornerShape(16.dp))
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = stringResource(R.string.welcome_title),
+                fontFamily = VT323Font,
+                fontSize = 36.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+            Text(
+                text = stringResource(R.string.welcome_desc),
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center,
+                color = Color.White.copy(alpha = 0.85f)
+            )
             
             Spacer(modifier = Modifier.height(10.dp))
 
@@ -958,6 +1000,8 @@ fun MainContent(
                             3 -> ConfigurationScreen(
                                 roleHeld = roleHeld,
                                 onRoleChanged = onRoleChanged,
+                                currentLang = currentLang,
+                                onLanguageChanged = onLanguageChanged,
                                 onShowPrivacyPolicy = {
                                     soundManager?.playClick()
                                     showPrivacyPolicyModal = true
@@ -1356,39 +1400,12 @@ fun BlockyScreen(
                 }
             }
 
-            // Bottom Section: Language Selection Row
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 2.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = stringResource(R.string.language_selection) + ":",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(end = 12.dp)
-                )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(
-                        selected = currentLang == "en",
-                        onClick = {
-                            soundManager?.playClick()
-                            onLanguageChanged("en")
-                        },
-                        label = { Text(stringResource(R.string.lang_english), style = MaterialTheme.typography.labelSmall) }
-                    )
-                    FilterChip(
-                        selected = currentLang == "es",
-                        onClick = {
-                            soundManager?.playClick()
-                            onLanguageChanged("es")
-                        },
-                        label = { Text(stringResource(R.string.lang_spanish), style = MaterialTheme.typography.labelSmall) }
-                    )
-                }
-            }
+            // Bottom Section: Language Flag Button
+            LanguageFlagButton(
+                currentLang = currentLang,
+                onLanguageChanged = onLanguageChanged,
+                modifier = Modifier.padding(bottom = 2.dp)
+            )
         }
     }
 }
@@ -2123,6 +2140,8 @@ fun DetailInfoRow(icon: ImageVector, label: String, value: String) {
 fun ConfigurationScreen(
     roleHeld: Boolean = true,
     onRoleChanged: (Boolean) -> Unit = {},
+    currentLang: String = "en",
+    onLanguageChanged: (String) -> Unit = {},
     onShowPrivacyPolicy: () -> Unit = {},
     onExportNumbers: (CsvExportOption) -> Unit = {},
     onSaveNumbersToLocalFile: (CsvExportOption) -> Unit = {},
@@ -2315,13 +2334,24 @@ fun ConfigurationScreen(
                 .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-        Text(
-            text = stringResource(R.string.configuration_title),
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            color = Color.White,
-            modifier = Modifier.padding(bottom = 6.dp)
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 6.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = stringResource(R.string.configuration_title),
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+            LanguageFlagButton(
+                currentLang = currentLang,
+                onLanguageChanged = onLanguageChanged
+            )
+        }
         Text(
             text = stringResource(R.string.configuration_desc),
             style = MaterialTheme.typography.bodyMedium,

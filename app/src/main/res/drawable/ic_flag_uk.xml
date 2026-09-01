@@ -1,0 +1,38 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="36dp"
+    android:height="24dp"
+    android:viewportWidth="60"
+    android:viewportHeight="40">
+    <!-- Blue Background -->
+    <path
+        android:fillColor="#012169"
+        android:pathData="M0,0h60v40h-60z" />
+    <!-- White Diagonals (Saltire Base) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M0,0 L8,0 L60,34.67 L60,40 L52,40 L0,5.33 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M60,0 L52,0 L0,34.67 L0,40 L8,40 L60,5.33 Z" />
+    <!-- Red Diagonals (St. Patrick's Saltire) -->
+    <path
+        android:fillColor="#C8102E"
+        android:pathData="M0,0 L4,0 L60,37.33 L60,40 L56,40 L0,2.67 Z" />
+    <path
+        android:fillColor="#C8102E"
+        android:pathData="M60,0 L56,0 L0,37.33 L0,40 L4,40 L60,2.67 Z" />
+    <!-- White Cross (St. George Base) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M24,0h12v40h-12z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M0,14h60v12h-60z" />
+    <!-- Red Cross (St. George) -->
+    <path
+        android:fillColor="#C8102E"
+        android:pathData="M26.5,0h7v40h-7z" />
+    <path
+        android:fillColor="#C8102E"
+        android:pathData="M0,16.5h60v7h-60z" />
+</vector>
