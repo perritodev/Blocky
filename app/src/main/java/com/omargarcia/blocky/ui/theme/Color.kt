@@ -11,7 +11,8 @@ val Blue40 = Color(0xFF1976D2)
 val BlueGrey40 = Color(0xFF455A64)
 val Cyan40 = Color(0xFF00838F)
 
-// Active shield card blue container
+// Active shield card green container
+val ActiveShieldGreenContainer = Color(0xFF1B5E35)
 val ActiveShieldBlueContainer = Color(0xFF1B3B60)
 
 // Aliases mapped to original blue palette
