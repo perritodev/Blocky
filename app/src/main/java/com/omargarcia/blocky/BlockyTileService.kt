@@ -35,7 +35,7 @@ class BlockyTileService : TileService() {
                 )
                 startActivityAndCollapse(pendingIntent)
             } else {
-                @Suppress("DEPRECATION")
+                @Suppress("StartActivityAndCollapseDeprecated", "DEPRECATION")
                 startActivityAndCollapse(intent)
             }
             return

@@ -249,22 +249,7 @@ fun MainContainer() {
                     onLanguageChanged = { lang ->
                         settingsManager.languageCode = lang
                         currentLang = lang
-                        val newLocale = Locale.forLanguageTag(lang)
-                        Locale.setDefault(newLocale)
-                        val config = Configuration(context.resources.configuration).apply {
-                            setLocale(newLocale)
-                            setLayoutDirection(newLocale)
-                        }
-                        @Suppress("DEPRECATION")
-                        context.resources.updateConfiguration(config, context.resources.displayMetrics)
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                            try {
-                                (context.getSystemService(Context.LOCALE_SERVICE) as? android.app.LocaleManager)?.applicationLocales =
-                                    android.os.LocaleList.forLanguageTags(lang)
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                            }
-                        }
+                        updateAppLocale(context, lang)
                     },
                     onThresholdChanged = { threshold ->
                         repeatCallThreshold = threshold
@@ -3079,3 +3064,24 @@ fun FullMainAppPreview() {
     }
 }
 
+private fun updateAppLocale(context: Context, lang: String) {
+    val newLocale = Locale.forLanguageTag(lang)
+    Locale.setDefault(newLocale)
+    val appContext = context.applicationContext
+    val config = Configuration(appContext.resources.configuration).apply {
+        setLocale(newLocale)
+        setLayoutDirection(newLocale)
+    }
+    @Suppress("DEPRECATION")
+    appContext.resources.updateConfiguration(config, appContext.resources.displayMetrics)
+    @Suppress("DEPRECATION")
+    context.resources.updateConfiguration(config, context.resources.displayMetrics)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        try {
+            (context.getSystemService(Context.LOCALE_SERVICE) as? android.app.LocaleManager)?.applicationLocales =
+                android.os.LocaleList.forLanguageTags(lang)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+}
