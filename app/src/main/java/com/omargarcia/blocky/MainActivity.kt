@@ -1265,22 +1265,37 @@ fun BlockyScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
-                        Text(
-                            text = if (isRoleHeldInitial && isEnabledInitial) stringResource(R.string.shield_active) else stringResource(R.string.shield_down),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
+                    Row(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(end = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (isRoleHeldInitial && isEnabledInitial) Icons.Default.Shield else Icons.Default.GppBad,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
                         )
-                        Text(
-                            text = when {
-                                !isRoleHeldInitial -> stringResource(R.string.shield_down_desc)
-                                !isEnabledInitial -> stringResource(R.string.service_disabled)
-                                else -> stringResource(R.string.shield_active_desc)
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(alpha = 0.85f)
-                        )
+                        Column {
+                            Text(
+                                text = if (isRoleHeldInitial && isEnabledInitial) stringResource(R.string.shield_active) else stringResource(R.string.shield_down),
+                                fontFamily = VT323Font,
+                                fontSize = 21.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                            Text(
+                                text = when {
+                                    !isRoleHeldInitial -> stringResource(R.string.shield_down_desc)
+                                    !isEnabledInitial -> stringResource(R.string.service_disabled)
+                                    else -> stringResource(R.string.shield_active_desc)
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.White.copy(alpha = 0.85f)
+                            )
+                        }
                     }
 
                     if (isRoleHeldInitial) {
@@ -1335,7 +1350,8 @@ fun BlockyScreen(
                         Column {
                             Text(
                                 text = stringResource(R.string.block_sound_alert_title),
-                                style = MaterialTheme.typography.titleSmall,
+                                fontFamily = VT323Font,
+                                fontSize = 21.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -1374,11 +1390,12 @@ fun BlockyScreen(
                             imageVector = Icons.Default.Call,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(20.dp)
                         )
                         Text(
                             text = stringResource(R.string.repeat_call_threshold_title),
-                            style = MaterialTheme.typography.titleSmall,
+                            fontFamily = VT323Font,
+                            fontSize = 21.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
