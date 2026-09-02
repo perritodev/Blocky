@@ -11,6 +11,7 @@ class SoundManager(private val context: Context) {
     private val settingsManager = SettingsManager(context)
     private var soundPool: SoundPool? = null
     private var clickSoundId: Int = 0
+    private var hitSoundId: Int = 0
     private var alienMediaPlayer: MediaPlayer? = null
     private var alienFadeJob: Job? = null
     private var mediaPlayer: MediaPlayer? = null
@@ -30,6 +31,7 @@ class SoundManager(private val context: Context) {
 
         try {
             clickSoundId = soundPool?.load(context, R.raw.sfx_button_click, 1) ?: 0
+            hitSoundId = soundPool?.load(context, R.raw.sfx_hit, 1) ?: 0
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -40,6 +42,17 @@ class SoundManager(private val context: Context) {
         try {
             if (clickSoundId != 0) {
                 soundPool?.play(clickSoundId, 0.20f, 0.20f, 1, 0, 1.0f)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun playHit() {
+        if (!settingsManager.isSoundEnabled) return
+        try {
+            if (hitSoundId != 0) {
+                soundPool?.play(hitSoundId, 0.40f, 0.40f, 1, 0, 1.0f)
             }
         } catch (e: Exception) {
             e.printStackTrace()

@@ -1374,9 +1374,13 @@ fun BlockyScreen(
                     }
                     Switch(
                         checked = isBlockSoundEnabled,
-                        onCheckedChange = {
-                            soundManager?.playClick()
-                            onBlockSoundEnabledChanged(it)
+                        onCheckedChange = { isEnabled ->
+                            if (isEnabled) {
+                                soundManager?.playHit()
+                            } else {
+                                soundManager?.playClick()
+                            }
+                            onBlockSoundEnabledChanged(isEnabled)
                         }
                     )
                 }
