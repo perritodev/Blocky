@@ -882,7 +882,17 @@ fun MainContent(
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = Color.Transparent
                     ),
-                    title = {},
+                    title = {
+                        if (selectedTab != 0) {
+                            Text(
+                                text = stringResource(R.string.app_name),
+                                fontFamily = VT323Font,
+                                fontSize = 26.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
+                    },
                 navigationIcon = {
                     IconButton(onClick = {
                         val newSoundState = !isSoundEnabled
