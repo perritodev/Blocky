@@ -1684,6 +1684,8 @@ fun BlockedListScreen(
                     text = stringResource(R.string.no_blocked_numbers),
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center,
+                    fontFamily = VT323Font,
+                    fontSize = 24.sp,
                     color = Color.White.copy(alpha = 0.8f)
                 )
             }
@@ -1693,6 +1695,8 @@ fun BlockedListScreen(
                     text = stringResource(R.string.no_results_found),
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center,
+                    fontFamily = VT323Font,
+                    fontSize = 24.sp,
                     color = Color.White.copy(alpha = 0.8f)
                 )
             }
@@ -1906,6 +1910,8 @@ fun WhitelistScreen(
                     text = stringResource(R.string.whitelist_empty),
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center,
+                    fontFamily = VT323Font,
+                    fontSize = 24.sp,
                     color = Color.White.copy(alpha = 0.8f)
                 )
             }
@@ -1915,6 +1921,8 @@ fun WhitelistScreen(
                     text = stringResource(R.string.no_results_found),
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center,
+                    fontFamily = VT323Font,
+                    fontSize = 24.sp,
                     color = Color.White.copy(alpha = 0.8f)
                 )
             }
