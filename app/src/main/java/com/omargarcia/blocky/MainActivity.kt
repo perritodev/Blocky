@@ -57,6 +57,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
@@ -193,7 +194,9 @@ fun MainContainer() {
         pendingSaveExportOption = null
     }
 
-    CompositionLocalProvider(LocalSoundManager provides soundManager) {
+    CompositionLocalProvider(
+        LocalSoundManager provides soundManager
+    ) {
         Crossfade(targetState = isOnboardingCompleted, label = "ScreenTransition") { completed ->
             if (completed) {
                 MainContent(
@@ -227,10 +230,19 @@ fun MainContainer() {
                         settingsManager.languageCode = lang
                         currentLang = lang
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                            (context.getSystemService(Context.LOCALE_SERVICE) as? android.app.LocaleManager)?.applicationLocales =
-                                android.os.LocaleList.forLanguageTags(lang)
+                            try {
+                                (context.getSystemService(Context.LOCALE_SERVICE) as? android.app.LocaleManager)?.applicationLocales =
+                                    android.os.LocaleList.forLanguageTags(lang)
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
+                        } else {
+                            (context as? ComponentActivity)?.let { activity ->
+                                activity.recreate()
+                                @Suppress("DEPRECATION")
+                                activity.overridePendingTransition(0, 0)
+                            }
                         }
-                        (context as? ComponentActivity)?.recreate()
                     },
                     onThresholdChanged = { threshold ->
                         repeatCallThreshold = threshold
