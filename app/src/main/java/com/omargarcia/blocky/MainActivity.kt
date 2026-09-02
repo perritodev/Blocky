@@ -597,20 +597,7 @@ fun OnboardingScreen(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = {
-                    soundManager?.playClick()
-                    showPrivacyPolicyModal = true
-                }) {
-                    Icon(Icons.Default.PrivacyTip, contentDescription = stringResource(R.string.privacy_policy_title), tint = MaterialTheme.colorScheme.primary)
-                }
-            }
-
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             Image(
                 painter = painterResource(R.drawable.ic_blocky_logo),
