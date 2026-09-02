@@ -2460,7 +2460,8 @@ fun ConfigurationScreen(
                     )
                     Text(
                         text = stringResource(R.string.permissions_health_title),
-                        style = MaterialTheme.typography.titleSmall,
+                        fontFamily = VT323Font,
+                        fontSize = 21.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
@@ -2549,7 +2550,8 @@ fun ConfigurationScreen(
                     )
                     Text(
                         text = stringResource(R.string.csv_backup_title),
-                        style = MaterialTheme.typography.titleSmall,
+                        fontFamily = VT323Font,
+                        fontSize = 21.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
@@ -2635,14 +2637,22 @@ fun ConfigurationScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 4. Privacy Policy Button
-        OutlinedButton(
-            onClick = onShowPrivacyPolicy,
-            modifier = Modifier.fillMaxWidth()
+        // 4. Privacy Policy Button (Solid Blue)
+        Button(
+            onClick = {
+                soundManager?.playClick()
+                onShowPrivacyPolicy()
+            },
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF1976D2),
+                contentColor = Color.White
+            ),
+            shape = RoundedCornerShape(12.dp)
         ) {
-            Icon(Icons.Default.PrivacyTip, contentDescription = null)
+            Icon(Icons.Default.Security, contentDescription = null, tint = Color.White)
             Spacer(modifier = Modifier.width(8.dp))
-            Text(stringResource(R.string.privacy_policy_title))
+            Text(stringResource(R.string.privacy_policy_title), color = Color.White, fontWeight = FontWeight.Bold)
         }
 
         Spacer(modifier = Modifier.height(28.dp))

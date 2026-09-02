@@ -116,7 +116,7 @@
     <string name="finish_setup_btn">Terminar Configuración</string>
 
     <string name="configuration_tab">Configuración</string>
-    <string name="configuration_title">Configuración y Ajustes</string>
+    <string name="configuration_title">Configuración</string>
     <string name="configuration_desc">Gestiona ajustes de la app, permisos y respaldos de listas.</string>
     <string name="contact_btn">Contactar al Desarrollador</string>
     <string name="reliability_guide_title">Mejorar la Fiabilidad</string>
@@ -175,7 +175,7 @@
     <string name="disclosure_decline_btn">Ahora No</string>
     <string name="privacy_policy_title">Política de Privacidad y Seguridad</string>
     <string name="privacy_policy_btn">Política de Privacidad</string>
-    <string name="privacy_policy_content">Blocky está comprometido con la protección de tu privacidad.\n\n1. Procesamiento en el Dispositivo: Todo el filtrado, verificación de lista blanca y consulta de contactos se realiza exclusivamente de forma local.\n\n2. Sin Recopilación de Datos: Blocky NO recopila, almacena en servidores remotos ni transmite tu lista de contactos, historial ni datos personales.\n\n3. Permisos Utilizados:\n• Contactos (READ_CONTACTS): Para evitar bloquear llamadas de contactos conocidos.\n• Notificaciones (POST_NOTIFICATIONS): Para mostrar el estado de protección activa.\n• Rol de Filtrado de Llamadas: Para permitir que el sistema Android transmita eventos de llamadas entrantes a Blocky para su filtrado local.\n\n4. Terceros: Ningún dato del usuario se comparte ni vende a terceros o redes publicitarias.</string>
+    <string name="privacy_policy_content">Blocky está diseñado bajo una estricta arquitectura de privacidad absoluta.\n\n1. Procesamiento 100% en el Dispositivo:\nTodo el filtrado de llamadas, cotejo de contactos, listas blancas y registros de historial se procesan exclusivamente de forma local. Blocky funciona completamente sin conexión y no tiene servidores en la nube.\n\n2. Cero Recopilación de Datos y Telemetría:\nBlocky NO recopila, rastrea, almacena de forma remota ni transmite tus datos personales, libreta de contactos, números telefónicos ni historial de llamadas. No incluye rastreadores de publicidad, SDKs analíticos ni telemetría.\n\n3. Permisos de Android y Uso:\n• Lectura de Contactos (READ_CONTACTS): Verificado en tiempo real localmente únicamente para evitar filtrar llamadas de tus contactos guardados. Tus contactos nunca salen de tu teléfono.\n• Servicio de Filtrado de Llamadas: Permite al sistema Android Telecom pasar los números entrantes a Blocky para su filtrado local inmediato.\n• Notificaciones (POST_NOTIFICATIONS): Usadas para mostrar el estado de protección activa y alertas de sonido opcionales.\n• Exención de Optimización de Batería: Mantiene el motor de filtrado confiable en segundo plano.\n\n4. Soberanía de Datos y Respaldos:\nTus números bloqueados y permitidos residen en el almacenamiento local de tu teléfono. Cualquier respaldo CSV exportado o importado se guarda únicamente en tu dispositivo o se comparte por tu acción directa.\n\n5. Cero Compartición con Terceros:\nNingún dato personal se vende, alquila o comparte con terceros o redes publicitarias.\n\n6. Contacto y Soporte:\nPara cualquier duda o soporte, contacta al desarrollador en prismaticamedia@gmail.com.</string>
     <string name="close_btn">Cerrar</string>
     <string name="cancel_btn">Cancelar</string>
     <string name="delete_permanent_dialog_title">Eliminar Permanentemente</string>
