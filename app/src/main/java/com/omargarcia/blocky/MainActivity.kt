@@ -19,6 +19,7 @@ import androidx.activity.ComponentActivity
 import androidx.core.net.toUri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.compose.runtime.saveable.rememberSaveable
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -117,6 +118,7 @@ fun MainContainer() {
 
     val soundManager = remember { SoundManager(context) }
     var isSoundEnabled by remember { mutableStateOf(settingsManager.isSoundEnabled) }
+    var isBlockSoundEnabled by remember { mutableStateOf(settingsManager.isBlockSoundEnabled) }
 
     DisposableEffect(Unit) {
         onDispose {
@@ -198,6 +200,7 @@ fun MainContainer() {
                     roleHeld = roleHeldState,
                     isEnabled = isEnabled,
                     isSoundEnabled = isSoundEnabled,
+                    isBlockSoundEnabled = isBlockSoundEnabled,
                     blockedCount = blockedCount,
                     blockedList = blockedCalls,
                     whitelist = whitelist,
@@ -216,9 +219,17 @@ fun MainContainer() {
                             soundManager.stopMusic()
                         }
                     },
+                    onBlockSoundEnabledChanged = {
+                        isBlockSoundEnabled = it
+                        settingsManager.isBlockSoundEnabled = it
+                    },
                     onLanguageChanged = { lang ->
                         settingsManager.languageCode = lang
                         currentLang = lang
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            (context.getSystemService(Context.LOCALE_SERVICE) as? android.app.LocaleManager)?.applicationLocales =
+                                android.os.LocaleList.forLanguageTags(lang)
+                        }
                         (context as? ComponentActivity)?.recreate()
                     },
                     onThresholdChanged = { threshold ->
@@ -373,12 +384,6 @@ fun MainContainer() {
             }
         } else {
             OnboardingScreen(
-                currentLang = currentLang,
-                onLanguageChanged = { lang ->
-                    settingsManager.languageCode = lang
-                    currentLang = lang
-                    (context as? ComponentActivity)?.recreate()
-                },
                 onCompleted = {
                     scope.launch {
                         settingsManager.isOnboardingCompleted = true
@@ -431,8 +436,6 @@ fun LanguageFlagButton(
 
 @Composable
 fun OnboardingScreen(
-    currentLang: String,
-    onLanguageChanged: (String) -> Unit,
     onCompleted: () -> Unit
 ) {
     val context = LocalContext.current
@@ -562,13 +565,9 @@ fun OnboardingScreen(
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                LanguageFlagButton(
-                    currentLang = currentLang,
-                    onLanguageChanged = onLanguageChanged
-                )
                 IconButton(onClick = {
                     soundManager?.playClick()
                     showPrivacyPolicyModal = true
@@ -796,6 +795,7 @@ fun MainContent(
     roleHeld: Boolean,
     isEnabled: Boolean,
     isSoundEnabled: Boolean,
+    isBlockSoundEnabled: Boolean = true,
     blockedCount: Int,
     blockedList: List<BlockedCall>,
     whitelist: List<WhitelistedNumber>,
@@ -805,6 +805,7 @@ fun MainContent(
     onRoleChanged: (Boolean) -> Unit,
     onEnabledChanged: (Boolean) -> Unit,
     onSoundEnabledChanged: (Boolean) -> Unit,
+    onBlockSoundEnabledChanged: (Boolean) -> Unit = {},
     onLanguageChanged: (String) -> Unit,
     onThresholdChanged: (Int) -> Unit = {},
     onIntervalMinutesChanged: (Int) -> Unit = {},
@@ -824,7 +825,7 @@ fun MainContent(
     onFinishOnboarding: () -> Unit,
 ) {
     val parallaxOffset by rememberParallaxOffset(maxOffsetPx = 45f)
-    var selectedTab by remember { mutableIntStateOf(0) }
+    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
     val context = LocalContext.current
     val isInPreview = LocalInspectionMode.current
     val soundManager = LocalSoundManager.current
@@ -885,12 +886,6 @@ fun MainContent(
                     }
                 },
                 actions = {
-                    IconButton(onClick = {
-                        soundManager?.playClick()
-                        showPrivacyPolicyModal = true
-                    }) {
-                        Icon(Icons.Default.PrivacyTip, contentDescription = stringResource(R.string.privacy_policy_title))
-                    }
                     val isProtectionActive = roleHeld && isEnabled
                     if (isProtectionActive) {
                         Icon(imageVector = Icons.Default.VerifiedUser, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.padding(end = 16.dp))
@@ -975,8 +970,8 @@ fun MainContent(
                                 onRoleChanged = onRoleChanged,
                                 isEnabledInitial = isEnabled,
                                 onEnabledChanged = onEnabledChanged,
-                                currentLang = currentLang,
-                                onLanguageChanged = onLanguageChanged,
+                                isBlockSoundEnabled = isBlockSoundEnabled,
+                                onBlockSoundEnabledChanged = onBlockSoundEnabledChanged,
                                 repeatCallThreshold = repeatCallThreshold,
                                 repeatCallIntervalMinutes = repeatCallIntervalMinutes,
                                 onThresholdChanged = onThresholdChanged,
@@ -1027,8 +1022,8 @@ fun BlockyScreen(
     onRoleChanged: (Boolean) -> Unit,
     isEnabledInitial: Boolean,
     onEnabledChanged: (Boolean) -> Unit,
-    currentLang: String,
-    onLanguageChanged: (String) -> Unit,
+    isBlockSoundEnabled: Boolean = true,
+    onBlockSoundEnabledChanged: (Boolean) -> Unit = {},
     blockedCount: Int = 0,
     repeatCallThreshold: Int = 1,
     repeatCallIntervalMinutes: Int = 15,
@@ -1298,6 +1293,56 @@ fun BlockyScreen(
                 }
             }
 
+            // Blocked Call Sound Alert Switch Card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)),
+                shape = RoundedCornerShape(14.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(end = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (isBlockSoundEnabled) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
+                            contentDescription = null,
+                            tint = if (isBlockSoundEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Column {
+                            Text(
+                                text = stringResource(R.string.block_sound_alert_title),
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = stringResource(R.string.block_sound_alert_desc),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    Switch(
+                        checked = isBlockSoundEnabled,
+                        onCheckedChange = {
+                            soundManager?.playClick()
+                            onBlockSoundEnabledChanged(it)
+                        }
+                    )
+                }
+            }
+
             // Allowed Calls Threshold Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -1399,13 +1444,6 @@ fun BlockyScreen(
                     }
                 }
             }
-
-            // Bottom Section: Language Flag Button
-            LanguageFlagButton(
-                currentLang = currentLang,
-                onLanguageChanged = onLanguageChanged,
-                modifier = Modifier.padding(bottom = 2.dp)
-            )
         }
     }
 }
@@ -2845,8 +2883,6 @@ private fun checkRoleHeld(context: Context): Boolean {
 fun OnboardingPreview() {
     BlockyTheme {
         OnboardingScreen(
-            currentLang = "en",
-            onLanguageChanged = {},
             onCompleted = {}
         )
     }
@@ -2861,8 +2897,8 @@ fun BlockyScreenActivePreview() {
             onRoleChanged = {},
             isEnabledInitial = true,
             onEnabledChanged = {},
-            currentLang = "en",
-            onLanguageChanged = {},
+            isBlockSoundEnabled = true,
+            onBlockSoundEnabledChanged = {},
             blockedCount = 42,
             repeatCallThreshold = 2,
             repeatCallIntervalMinutes = 15,
@@ -2879,8 +2915,8 @@ fun BlockyScreenInactivePreview() {
             onRoleChanged = {},
             isEnabledInitial = false,
             onEnabledChanged = {},
-            currentLang = "es",
-            onLanguageChanged = {},
+            isBlockSoundEnabled = false,
+            onBlockSoundEnabledChanged = {},
             blockedCount = 0
         )
     }

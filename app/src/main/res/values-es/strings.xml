@@ -40,6 +40,11 @@
     <string name="sound_effects_toggle">Efectos de Sonido</string>
     <string name="sound_enabled">Sonidos Activados</string>
     <string name="sound_disabled">Sonidos Silenciados</string>
+    <string name="block_sound_alert_title">Sonido al Bloquear Llamada</string>
+    <string name="block_sound_alert_desc">Reproduce un sonido de impacto retro cada vez que se bloquea una llamada desconocida.</string>
+    <string name="tile_label">Escudo Blocky</string>
+    <string name="tile_active">Activo</string>
+    <string name="tile_inactive">Desactivado</string>
 
     <string name="repeat_call_threshold_title">Intentos de Llamada Permitidos</string>
     <string name="repeat_call_threshold_desc">Permitir que un número desconocido suene si llama repetidamente en 15 min o en un intervalo personalizado.</string>

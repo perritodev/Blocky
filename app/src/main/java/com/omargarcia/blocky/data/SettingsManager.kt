@@ -53,11 +53,18 @@ class SettingsManager(context: Context) {
             prefs.edit { putInt(KEY_REPEAT_CALL_INTERVAL_MINUTES, value) }
         }
 
+    var isBlockSoundEnabled: Boolean
+        get() = prefs.getBoolean(KEY_BLOCK_SOUND_ENABLED, true)
+        set(value) {
+            prefs.edit { putBoolean(KEY_BLOCK_SOUND_ENABLED, value) }
+        }
+
     companion object {
         private const val KEY_BLOCKING_ENABLED = "blocking_enabled"
         private const val KEY_LANGUAGE_CODE = "language_code"
         private const val KEY_ONBOARDING_COMPLETED = "onboarding_completed"
         private const val KEY_SOUND_ENABLED = "sound_enabled"
+        private const val KEY_BLOCK_SOUND_ENABLED = "block_sound_enabled"
         private const val KEY_REPEAT_CALL_THRESHOLD = "repeat_call_threshold"
         private const val KEY_REPEAT_CALL_INTERVAL_MINUTES = "repeat_call_interval_minutes"
     }

@@ -40,6 +40,11 @@
     <string name="sound_effects_toggle">Sound Effects</string>
     <string name="sound_enabled">Sounds Active</string>
     <string name="sound_disabled">Sounds Muted</string>
+    <string name="block_sound_alert_title">Blocked Call Sound Alert</string>
+    <string name="block_sound_alert_desc">Play a retro hit sound whenever an unknown call is blocked.</string>
+    <string name="tile_label">Blocky Shield</string>
+    <string name="tile_active">Active</string>
+    <string name="tile_inactive">Disabled</string>
 
     <string name="repeat_call_threshold_title">Allowed Calls Threshold</string>
     <string name="repeat_call_threshold_desc">Allow an unknown number to ring if they call repeatedly within 15 min or custom time interval.</string>

@@ -3,6 +3,7 @@ package com.omargarcia.blocky
 import android.Manifest
 import android.content.pm.PackageManager
 import android.database.Cursor
+import android.media.MediaPlayer
 import android.net.Uri
 import android.provider.ContactsContract
 import android.telecom.Call
@@ -41,14 +42,14 @@ class CallBlockerService : CallScreeningService() {
 
             // Handle Private / Hidden / Anonymous numbers
             if (rawNumber.isBlank()) {
-                blockCall(callDetails, "Private / Unknown", historyDao)
+                blockCall(callDetails, "Private / Unknown", historyDao, settingsManager)
                 return@launch
             }
 
             // 1. Check if number is explicitly in the permanent blocked list
             val blockedList = permanentBlockDao.getAllList().map { it.phoneNumber }
             if (isNumberInList(rawNumber, normalizedNumber, blockedList)) {
-                blockCall(callDetails, rawNumber, historyDao)
+                blockCall(callDetails, rawNumber, historyDao, settingsManager)
                 return@launch
             }
 
@@ -89,7 +90,7 @@ class CallBlockerService : CallScreeningService() {
             }
 
             // 6. Unknown caller not in contacts or whitelist -> Block
-            blockCall(callDetails, rawNumber, historyDao)
+            blockCall(callDetails, rawNumber, historyDao, settingsManager)
         }
     }
 
@@ -100,7 +101,8 @@ class CallBlockerService : CallScreeningService() {
     private suspend fun blockCall(
         callDetails: Call.Details, 
         displayLogNumber: String, 
-        historyDao: BlockedCallDao
+        historyDao: BlockedCallDao,
+        settingsManager: SettingsManager
     ) {
         val response = CallResponse.Builder()
             .setDisallowCall(true)
@@ -110,7 +112,33 @@ class CallBlockerService : CallScreeningService() {
             .build()
 
         historyDao.insert(BlockedCall(phoneNumber = displayLogNumber))
+        playBlockedSound(settingsManager)
         respondToCall(callDetails, response)
+    }
+
+    private fun playBlockedSound(settingsManager: SettingsManager) {
+        if (!settingsManager.isBlockSoundEnabled) return
+        try {
+            val player = MediaPlayer.create(applicationContext, R.raw.sfx_hit)
+            player?.apply {
+                setVolume(0.85f, 0.85f)
+                setOnCompletionListener { mp ->
+                    try {
+                        mp.stop()
+                        mp.release()
+                    } catch (_: Exception) {}
+                }
+                setOnErrorListener { mp, _, _ ->
+                    try {
+                        mp.release()
+                    } catch (_: Exception) {}
+                    true
+                }
+                start()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     @Suppress("DEPRECATION")
