@@ -2878,7 +2878,29 @@ private fun checkRoleHeld(context: Context): Boolean {
 // 🎨 Jetpack Compose Android Studio Previews
 // ==========================================
 
-@Preview(showBackground = true, name = "1. Onboarding Screen")
+@Composable
+fun PreviewBackgroundContainer(content: @Composable () -> Unit) {
+    BlockyTheme {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+        ) {
+            Image(
+                painter = painterResource(R.drawable.bg_app_pattern),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .scale(1.22f),
+                alpha = 0.35f
+            )
+            content()
+        }
+    }
+}
+
+@Preview(showBackground = true, showSystemUi = true, name = "1. Onboarding Screen")
 @Composable
 fun OnboardingPreview() {
     BlockyTheme {
@@ -2888,10 +2910,10 @@ fun OnboardingPreview() {
     }
 }
 
-@Preview(showBackground = true, name = "2. Protection Active")
+@Preview(showBackground = true, showSystemUi = true, name = "2. Protection Active (With Bricks)")
 @Composable
 fun BlockyScreenActivePreview() {
-    BlockyTheme {
+    PreviewBackgroundContainer {
         BlockyScreen(
             isRoleHeldInitial = true,
             onRoleChanged = {},
@@ -2906,10 +2928,10 @@ fun BlockyScreenActivePreview() {
     }
 }
 
-@Preview(showBackground = true, name = "3. Protection Inactive")
+@Preview(showBackground = true, showSystemUi = true, name = "3. Protection Inactive (With Bricks)")
 @Composable
 fun BlockyScreenInactivePreview() {
-    BlockyTheme {
+    PreviewBackgroundContainer {
         BlockyScreen(
             isRoleHeldInitial = false,
             onRoleChanged = {},
@@ -2922,7 +2944,7 @@ fun BlockyScreenInactivePreview() {
     }
 }
 
-@Preview(showBackground = true, name = "4. Blocked Numbers List")
+@Preview(showBackground = true, showSystemUi = true, name = "4. Blocked Numbers List (With Bricks)")
 @Composable
 fun BlockedListPreview() {
     val mockBlocked = listOf(
@@ -2930,7 +2952,7 @@ fun BlockedListPreview() {
         BlockedCall(id = 2, phoneNumber = "+1 555-0102"),
         BlockedCall(id = 3, phoneNumber = "Private / Unknown")
     )
-    BlockyTheme {
+    PreviewBackgroundContainer {
         BlockedListScreen(
             blockedList = mockBlocked,
             onUnblock = {},
@@ -2941,14 +2963,14 @@ fun BlockedListPreview() {
     }
 }
 
-@Preview(showBackground = true, name = "5. Whitelist Screen")
+@Preview(showBackground = true, showSystemUi = true, name = "5. Whitelist Screen (With Bricks)")
 @Composable
 fun WhitelistPreview() {
     val mockWhitelist = listOf(
         WhitelistedNumber(id = 1, phoneNumber = "+1 555-9999"),
         WhitelistedNumber(id = 2, phoneNumber = "+1 555-1234")
     )
-    BlockyTheme {
+    PreviewBackgroundContainer {
         WhitelistScreen(
             whitelist = mockWhitelist,
             onRemove = {},
@@ -2958,11 +2980,51 @@ fun WhitelistPreview() {
     }
 }
 
-@Preview(showBackground = true, name = "6. Configuration & Settings")
+@Preview(showBackground = true, showSystemUi = true, name = "6. Configuration & Settings (With Bricks)")
 @Composable
 fun ConfigurationPreview() {
-    BlockyTheme {
+    PreviewBackgroundContainer {
         ConfigurationScreen()
+    }
+}
+
+@Preview(showBackground = true, showSystemUi = true, name = "7. Full Main App Scaffold")
+@Composable
+fun FullMainAppPreview() {
+    BlockyTheme {
+        MainContent(
+            roleHeld = true,
+            isEnabled = true,
+            isSoundEnabled = true,
+            isBlockSoundEnabled = true,
+            blockedCount = 42,
+            blockedList = emptyList(),
+            whitelist = emptyList(),
+            currentLang = "en",
+            repeatCallThreshold = 2,
+            repeatCallIntervalMinutes = 15,
+            onRoleChanged = {},
+            onEnabledChanged = {},
+            onSoundEnabledChanged = {},
+            onBlockSoundEnabledChanged = {},
+            onLanguageChanged = {},
+            onThresholdChanged = {},
+            onIntervalMinutesChanged = {},
+            onUnblockNumber = {},
+            onUnblockAll = {},
+            onAddToWhitelistFromBlocked = {},
+            onAddToBlockedFromWhitelist = {},
+            onDeleteBlockedPermanent = {},
+            onDeleteWhitelistPermanent = {},
+            onRemoveFromWhitelist = {},
+            onAddBlockedManualNumber = {},
+            onAddWhitelistManualNumber = {},
+            onImportNumbersToBlocked = {},
+            onImportNumbersToWhitelist = {},
+            onExportNumbersToCsv = {},
+            onSaveNumbersToLocalFile = {},
+            onFinishOnboarding = {}
+        )
     }
 }
 
