@@ -4,6 +4,7 @@
     <string name="blocked_list_tab">Blocked List</string>
     <string name="whitelist_tab">Whitelist</string>
     <string name="calls_blocked_label">Calls Blocked</string>
+    <string name="main_screen_subtitle">Don\'t receive any call you don\'t want</string>
     <string name="protection_active">Protection is currently active.</string>
     <string name="protection_inactive">Protection is currently inactive.</string>
     <string name="shield_active">Shield Active</string>

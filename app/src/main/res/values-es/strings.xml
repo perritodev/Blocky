@@ -4,6 +4,7 @@
     <string name="blocked_list_tab">Bloqueados</string>
     <string name="whitelist_tab">Permitidos</string>
     <string name="calls_blocked_label">Llamadas Bloqueadas</string>
+    <string name="main_screen_subtitle">No recibas ninguna llamada que no quieras</string>
     <string name="protection_active">La protección está activa.</string>
     <string name="protection_inactive">La protección está inactiva.</string>
     <string name="shield_active">Escudo Activo</string>

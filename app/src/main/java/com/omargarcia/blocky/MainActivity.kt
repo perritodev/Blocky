@@ -1231,7 +1231,7 @@ fun BlockyScreen(
                     color = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = if (isRoleHeldInitial) stringResource(R.string.protection_active) else stringResource(R.string.protection_inactive),
+                    text = stringResource(R.string.main_screen_subtitle),
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.titleMedium,
                     fontSize = 17.sp,
