@@ -2415,7 +2415,7 @@ fun ConfigurationScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 6.dp),
+                .padding(bottom = 16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -2430,13 +2430,6 @@ fun ConfigurationScreen(
                 onLanguageChanged = onLanguageChanged
             )
         }
-        Text(
-            text = stringResource(R.string.configuration_desc),
-            style = MaterialTheme.typography.bodyMedium,
-            textAlign = TextAlign.Center,
-            color = Color.White.copy(alpha = 0.85f),
-            modifier = Modifier.padding(bottom = 20.dp)
-        )
 
         // 1. Setup Status & Permissions Checklist
         Card(
