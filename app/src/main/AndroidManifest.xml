@@ -45,7 +45,7 @@
 
         <service
             android:name=".BlockyTileService"
-            android:icon="@drawable/ic_blocky_logo"
+            android:icon="@drawable/ic_control_center_tile"
             android:label="@string/tile_label"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
             android:exported="true">

@@ -70,7 +70,7 @@ class BlockyTileService : TileService() {
         val isProtectionActive = roleHeld && settingsManager.isBlockingEnabled
 
         tile.label = getString(R.string.tile_label)
-        tile.icon = Icon.createWithResource(this, R.drawable.ic_blocky_logo)
+        tile.icon = Icon.createWithResource(this, R.drawable.ic_control_center_tile)
 
         if (isProtectionActive) {
             tile.state = Tile.STATE_ACTIVE
