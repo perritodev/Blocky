@@ -95,6 +95,16 @@ class MainActivity : ComponentActivity() {
         super.attachBaseContext(newBase.createConfigurationContext(config))
     }
 
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        val settings = SettingsManager(this)
+        val locale = Locale.forLanguageTag(settings.languageCode)
+        newConfig.setLocale(locale)
+        newConfig.setLayoutDirection(locale)
+        @Suppress("DEPRECATION")
+        resources.updateConfiguration(newConfig, resources.displayMetrics)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -194,7 +204,17 @@ fun MainContainer() {
         pendingSaveExportOption = null
     }
 
+    val baseConfig = LocalConfiguration.current
+    val currentLocale = remember(currentLang) { Locale.forLanguageTag(currentLang) }
+    val localizedConfiguration = remember(currentLang, baseConfig) {
+        Configuration(baseConfig).apply {
+            setLocale(currentLocale)
+            setLayoutDirection(currentLocale)
+        }
+    }
+
     CompositionLocalProvider(
+        LocalConfiguration provides localizedConfiguration,
         LocalSoundManager provides soundManager
     ) {
         Crossfade(targetState = isOnboardingCompleted, label = "ScreenTransition") { completed ->
@@ -229,18 +249,20 @@ fun MainContainer() {
                     onLanguageChanged = { lang ->
                         settingsManager.languageCode = lang
                         currentLang = lang
+                        val newLocale = Locale.forLanguageTag(lang)
+                        Locale.setDefault(newLocale)
+                        val config = Configuration(context.resources.configuration).apply {
+                            setLocale(newLocale)
+                            setLayoutDirection(newLocale)
+                        }
+                        @Suppress("DEPRECATION")
+                        context.resources.updateConfiguration(config, context.resources.displayMetrics)
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                             try {
                                 (context.getSystemService(Context.LOCALE_SERVICE) as? android.app.LocaleManager)?.applicationLocales =
                                     android.os.LocaleList.forLanguageTags(lang)
                             } catch (e: Exception) {
                                 e.printStackTrace()
-                            }
-                        } else {
-                            (context as? ComponentActivity)?.let { activity ->
-                                activity.recreate()
-                                @Suppress("DEPRECATION")
-                                activity.overridePendingTransition(0, 0)
                             }
                         }
                     },
