@@ -2637,22 +2637,18 @@ fun ConfigurationScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 4. Privacy Policy Button (Solid Blue)
+        // 4. Privacy Policy Button
         Button(
             onClick = {
                 soundManager?.playClick()
                 onShowPrivacyPolicy()
             },
             modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF1976D2),
-                contentColor = Color.White
-            ),
-            shape = RoundedCornerShape(12.dp)
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
         ) {
-            Icon(Icons.Default.Security, contentDescription = null, tint = Color.White)
+            Icon(Icons.Default.PrivacyTip, contentDescription = null)
             Spacer(modifier = Modifier.width(8.dp))
-            Text(stringResource(R.string.privacy_policy_title), color = Color.White, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.privacy_policy_title))
         }
 
         Spacer(modifier = Modifier.height(28.dp))
