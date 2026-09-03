@@ -1051,6 +1051,7 @@ fun MainContent(
 }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BlockyScreen(
     modifier: Modifier = Modifier,
@@ -1081,10 +1082,18 @@ fun BlockyScreen(
 
     if (showVolumeDialog) {
         var tempVolume by rememberSaveable { mutableFloatStateOf(blockSoundVolume) }
-        var lastPreviewTime by remember { mutableLongStateOf(0L) }
+
+        DisposableEffect(Unit) {
+            onDispose {
+                soundManager?.stopAlertPreview()
+            }
+        }
 
         AlertDialog(
-            onDismissRequest = { showVolumeDialog = false },
+            onDismissRequest = {
+                soundManager?.stopAlertPreview()
+                showVolumeDialog = false
+            },
             icon = {
                 Icon(
                     imageVector = when {
@@ -1142,17 +1151,29 @@ fun BlockyScreen(
                             value = tempVolume,
                             onValueChange = { newVol ->
                                 tempVolume = newVol
-                                val now = android.os.SystemClock.uptimeMillis()
-                                if (now - lastPreviewTime > 250L) {
-                                    lastPreviewTime = now
-                                    soundManager?.playAlertPreview(newVol)
-                                }
+                                soundManager?.updateAlertPreviewVolume(newVol)
                             },
                             onValueChangeFinished = {
-                                soundManager?.playAlertPreview(tempVolume)
+                                soundManager?.stopAlertPreview()
                             },
                             valueRange = 0f..1f,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
+                            thumb = {
+                                Image(
+                                    painter = painterResource(R.drawable.ic_slider_alien),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(36.dp),
+                                    contentScale = ContentScale.Fit
+                                )
+                            },
+                            track = { sliderState ->
+                                SliderDefaults.Track(
+                                    sliderState = sliderState,
+                                    thumbTrackGapSize = 0.dp,
+                                    trackInsideCornerSize = 0.dp,
+                                    drawStopIndicator = null
+                                )
+                            }
                         )
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.VolumeUp,
@@ -1161,33 +1182,20 @@ fun BlockyScreen(
                             modifier = Modifier.size(20.dp)
                         )
                     }
-
-                    OutlinedButton(
-                        onClick = {
-                            soundManager?.playAlertPreview(tempVolume)
-                        },
-                        shape = RoundedCornerShape(10.dp),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.PlayArrow,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = stringResource(R.string.test_sound_btn),
-                            fontFamily = VT323Font,
-                            fontSize = 18.sp
-                        )
-                    }
                 }
             },
             confirmButton = {
                 Button(
                     onClick = {
+                        soundManager?.stopAlertPreview()
                         soundManager?.playClick()
-                        onBlockSoundVolumeChanged(tempVolume)
+                        if (tempVolume <= 0.01f) {
+                            onBlockSoundEnabledChanged(false)
+                            onBlockSoundVolumeChanged(0f)
+                        } else {
+                            onBlockSoundEnabledChanged(true)
+                            onBlockSoundVolumeChanged(tempVolume)
+                        }
                         showVolumeDialog = false
                     }
                 ) {
@@ -1197,6 +1205,7 @@ fun BlockyScreen(
             dismissButton = {
                 TextButton(
                     onClick = {
+                        soundManager?.stopAlertPreview()
                         soundManager?.playClick()
                         showVolumeDialog = false
                     }

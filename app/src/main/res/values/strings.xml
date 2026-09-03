@@ -45,7 +45,6 @@
     <string name="block_sound_alert_desc">Play a retro hit sound whenever an unknown call is blocked.</string>
     <string name="adjust_alert_volume_title">Adjust Alert Volume</string>
     <string name="adjust_alert_volume_desc">Set the volume for the blocked call sound alert independent from system volume.</string>
-    <string name="test_sound_btn">Preview Sound</string>
     <string name="tile_label">Blocky Shield</string>
     <string name="tile_active">Active</string>
     <string name="tile_inactive">Disabled</string>

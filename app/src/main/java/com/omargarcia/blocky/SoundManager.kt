@@ -59,14 +59,52 @@ class SoundManager(private val context: Context) {
         }
     }
 
-    fun playAlertPreview(volume: Float) {
+    private var alertMediaPlayer: MediaPlayer? = null
+
+    fun updateAlertPreviewVolume(volume: Float) {
+        val clamped = volume.coerceIn(0.0f, 1.0f)
+        val gain = if (clamped <= 0.02f) 0.0f else (clamped * clamped)
+
         try {
-            if (hitSoundId != 0) {
-                val clamped = volume.coerceIn(0.0f, 1.0f)
-                soundPool?.play(hitSoundId, clamped, clamped, 2, 0, 1.0f)
+            if (alertMediaPlayer == null) {
+                if (gain > 0f) {
+                    alertMediaPlayer = MediaPlayer.create(context, R.raw.sfx_hit)?.apply {
+                        isLooping = true
+                        setVolume(gain, gain)
+                        start()
+                    }
+                }
+            } else {
+                alertMediaPlayer?.let { player ->
+                    player.setVolume(gain, gain)
+                    if (gain <= 0f) {
+                        if (player.isPlaying) {
+                            player.pause()
+                        }
+                    } else {
+                        if (!player.isPlaying) {
+                            player.start()
+                        }
+                    }
+                }
             }
         } catch (e: Exception) {
             e.printStackTrace()
+        }
+    }
+
+    fun stopAlertPreview() {
+        try {
+            alertMediaPlayer?.let { player ->
+                if (player.isPlaying) {
+                    player.stop()
+                }
+                player.release()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        } finally {
+            alertMediaPlayer = null
         }
     }
 
@@ -175,6 +213,7 @@ class SoundManager(private val context: Context) {
     fun release() {
         stopMusic()
         stopAlienSound()
+        stopAlertPreview()
         scope.cancel()
         soundPool?.release()
         soundPool = null
