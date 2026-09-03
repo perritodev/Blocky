@@ -2591,14 +2591,14 @@ fun ConfigurationScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp)
+                .padding(horizontal = 16.dp, vertical = 10.dp)
                 .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 16.dp),
+                .padding(bottom = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -2621,8 +2621,8 @@ fun ConfigurationScreen(
             shape = RoundedCornerShape(14.dp)
         ) {
             Column(
-                modifier = Modifier.padding(14.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -2702,7 +2702,7 @@ fun ConfigurationScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
         // 2. CSV Backup & Restore Card
         Card(
@@ -2711,8 +2711,8 @@ fun ConfigurationScreen(
             shape = RoundedCornerShape(14.dp)
         ) {
             Column(
-                modifier = Modifier.padding(14.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -2754,7 +2754,7 @@ fun ConfigurationScreen(
                         Text(stringResource(R.string.export_csv_btn), fontSize = 11.sp, maxLines = 1)
                     }
 
-                    OutlinedButton(
+                    Button(
                         onClick = {
                             soundManager?.playClick()
                             importCsvLauncher.launch(arrayOf("text/*", "text/csv", "application/csv"))
@@ -2769,7 +2769,7 @@ fun ConfigurationScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
         // 3. Contact Developer Button
         val deviceInfoHeader = stringResource(R.string.device_info_header)
@@ -2811,7 +2811,7 @@ fun ConfigurationScreen(
             Text(stringResource(R.string.contact_btn))
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         // 4. Privacy Policy Button
         Button(
@@ -2827,7 +2827,7 @@ fun ConfigurationScreen(
             Text(stringResource(R.string.privacy_policy_title))
         }
 
-        Spacer(modifier = Modifier.height(28.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         val appVersionStr = remember(isInPreview) {
             if (isInPreview) {
@@ -2848,7 +2848,7 @@ fun ConfigurationScreen(
             color = Color.White.copy(alpha = 0.5f),
             textAlign = TextAlign.Center,
             modifier = Modifier
-                .padding(bottom = 24.dp)
+                .padding(bottom = 12.dp)
                 .clickable {
                     if (!isAlienFlying) {
                         isAlienFlying = true
