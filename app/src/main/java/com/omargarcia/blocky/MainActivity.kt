@@ -24,6 +24,7 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
@@ -44,9 +45,11 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
+import androidx.compose.material.icons.automirrored.filled.VolumeDown
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.*
+import androidx.core.view.WindowCompat
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -107,11 +110,26 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+        )
+        WindowCompat.getInsetsController(window, window.decorView).apply {
+            isAppearanceLightStatusBars = false
+            isAppearanceLightNavigationBars = false
+        }
         setContent {
             BlockyTheme {
                 MainContainer()
             }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        WindowCompat.getInsetsController(window, window.decorView).apply {
+            isAppearanceLightStatusBars = false
+            isAppearanceLightNavigationBars = false
         }
     }
 }
@@ -130,6 +148,7 @@ fun MainContainer() {
     val soundManager = remember { SoundManager(context) }
     var isSoundEnabled by remember { mutableStateOf(settingsManager.isSoundEnabled) }
     var isBlockSoundEnabled by remember { mutableStateOf(settingsManager.isBlockSoundEnabled) }
+    var blockSoundVolume by remember { mutableFloatStateOf(settingsManager.blockSoundVolume) }
 
     DisposableEffect(Unit) {
         onDispose {
@@ -224,6 +243,7 @@ fun MainContainer() {
                     isEnabled = isEnabled,
                     isSoundEnabled = isSoundEnabled,
                     isBlockSoundEnabled = isBlockSoundEnabled,
+                    blockSoundVolume = blockSoundVolume,
                     blockedCount = blockedCount,
                     blockedList = blockedCalls,
                     whitelist = whitelist,
@@ -245,6 +265,10 @@ fun MainContainer() {
                     onBlockSoundEnabledChanged = {
                         isBlockSoundEnabled = it
                         settingsManager.isBlockSoundEnabled = it
+                    },
+                    onBlockSoundVolumeChanged = {
+                        blockSoundVolume = it
+                        settingsManager.blockSoundVolume = it
                     },
                     onLanguageChanged = { lang ->
                         settingsManager.languageCode = lang
@@ -802,6 +826,7 @@ fun MainContent(
     isEnabled: Boolean,
     isSoundEnabled: Boolean,
     isBlockSoundEnabled: Boolean = true,
+    blockSoundVolume: Float = 0.85f,
     blockedCount: Int,
     blockedList: List<BlockedCall>,
     whitelist: List<WhitelistedNumber>,
@@ -812,6 +837,7 @@ fun MainContent(
     onEnabledChanged: (Boolean) -> Unit,
     onSoundEnabledChanged: (Boolean) -> Unit,
     onBlockSoundEnabledChanged: (Boolean) -> Unit = {},
+    onBlockSoundVolumeChanged: (Float) -> Unit = {},
     onLanguageChanged: (String) -> Unit,
     onThresholdChanged: (Int) -> Unit = {},
     onIntervalMinutesChanged: (Int) -> Unit = {},
@@ -980,6 +1006,8 @@ fun MainContent(
                                 onEnabledChanged = onEnabledChanged,
                                 isBlockSoundEnabled = isBlockSoundEnabled,
                                 onBlockSoundEnabledChanged = onBlockSoundEnabledChanged,
+                                blockSoundVolume = blockSoundVolume,
+                                onBlockSoundVolumeChanged = onBlockSoundVolumeChanged,
                                 repeatCallThreshold = repeatCallThreshold,
                                 repeatCallIntervalMinutes = repeatCallIntervalMinutes,
                                 onThresholdChanged = onThresholdChanged,
@@ -1032,6 +1060,8 @@ fun BlockyScreen(
     onEnabledChanged: (Boolean) -> Unit,
     isBlockSoundEnabled: Boolean = true,
     onBlockSoundEnabledChanged: (Boolean) -> Unit = {},
+    blockSoundVolume: Float = 0.85f,
+    onBlockSoundVolumeChanged: (Float) -> Unit = {},
     blockedCount: Int = 0,
     repeatCallThreshold: Int = 1,
     repeatCallIntervalMinutes: Int = 15,
@@ -1047,6 +1077,135 @@ fun BlockyScreen(
     var customInputText by remember { mutableStateOf("") }
     var customIntervalText by remember { mutableStateOf("") }
     var showThankYouDialog by remember { mutableStateOf(false) }
+    var showVolumeDialog by rememberSaveable { mutableStateOf(false) }
+
+    if (showVolumeDialog) {
+        var tempVolume by rememberSaveable { mutableFloatStateOf(blockSoundVolume) }
+        var lastPreviewTime by remember { mutableLongStateOf(0L) }
+
+        AlertDialog(
+            onDismissRequest = { showVolumeDialog = false },
+            icon = {
+                Icon(
+                    imageVector = when {
+                        tempVolume == 0f -> Icons.AutoMirrored.Filled.VolumeOff
+                        tempVolume < 0.5f -> Icons.AutoMirrored.Filled.VolumeDown
+                        else -> Icons.AutoMirrored.Filled.VolumeUp
+                    },
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(32.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = stringResource(R.string.adjust_alert_volume_title),
+                    fontFamily = VT323Font,
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.adjust_alert_volume_desc),
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Text(
+                        text = "${(tempVolume * 100).roundToInt()}%",
+                        fontFamily = VT323Font,
+                        fontSize = 46.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.VolumeOff,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Slider(
+                            value = tempVolume,
+                            onValueChange = { newVol ->
+                                tempVolume = newVol
+                                val now = android.os.SystemClock.uptimeMillis()
+                                if (now - lastPreviewTime > 250L) {
+                                    lastPreviewTime = now
+                                    soundManager?.playAlertPreview(newVol)
+                                }
+                            },
+                            onValueChangeFinished = {
+                                soundManager?.playAlertPreview(tempVolume)
+                            },
+                            valueRange = 0f..1f,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.VolumeUp,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    OutlinedButton(
+                        onClick = {
+                            soundManager?.playAlertPreview(tempVolume)
+                        },
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PlayArrow,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = stringResource(R.string.test_sound_btn),
+                            fontFamily = VT323Font,
+                            fontSize = 18.sp
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        soundManager?.playClick()
+                        onBlockSoundVolumeChanged(tempVolume)
+                        showVolumeDialog = false
+                    }
+                ) {
+                    Text(stringResource(R.string.save_btn))
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        soundManager?.playClick()
+                        showVolumeDialog = false
+                    }
+                ) {
+                    Text(stringResource(R.string.cancel_btn))
+                }
+            }
+        )
+    }
 
     if (showThankYouDialog) {
         AlertDialog(
@@ -1318,7 +1477,13 @@ fun BlockyScreen(
 
             // Blocked Call Sound Alert Switch Card
             Card(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .clickable {
+                        soundManager?.playClick()
+                        showVolumeDialog = true
+                    },
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)),
                 shape = RoundedCornerShape(14.dp)
             ) {
@@ -1343,13 +1508,25 @@ fun BlockyScreen(
                             modifier = Modifier.size(20.dp)
                         )
                         Column {
-                            Text(
-                                text = stringResource(R.string.block_sound_alert_title),
-                                fontFamily = VT323Font,
-                                fontSize = 21.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.block_sound_alert_title),
+                                    fontFamily = VT323Font,
+                                    fontSize = 21.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "(${(blockSoundVolume * 100).roundToInt()}%)",
+                                    fontFamily = VT323Font,
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
                             Text(
                                 text = stringResource(R.string.block_sound_alert_desc),
                                 style = MaterialTheme.typography.bodySmall,

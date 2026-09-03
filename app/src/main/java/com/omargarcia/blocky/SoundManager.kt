@@ -59,6 +59,17 @@ class SoundManager(private val context: Context) {
         }
     }
 
+    fun playAlertPreview(volume: Float) {
+        try {
+            if (hitSoundId != 0) {
+                val clamped = volume.coerceIn(0.0f, 1.0f)
+                soundPool?.play(hitSoundId, clamped, clamped, 2, 0, 1.0f)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
     fun playAlienSound() {
         if (!settingsManager.isSoundEnabled) return
         stopAlienSound()

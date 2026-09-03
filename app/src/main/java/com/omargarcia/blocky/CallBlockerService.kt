@@ -119,9 +119,10 @@ class CallBlockerService : CallScreeningService() {
     private fun playBlockedSound(settingsManager: SettingsManager) {
         if (!settingsManager.isBlockSoundEnabled) return
         try {
+            val volume = settingsManager.blockSoundVolume
             val player = MediaPlayer.create(applicationContext, R.raw.sfx_hit)
             player?.apply {
-                setVolume(0.85f, 0.85f)
+                setVolume(volume, volume)
                 setOnCompletionListener { mp ->
                     try {
                         mp.stop()

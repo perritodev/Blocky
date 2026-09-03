@@ -43,6 +43,9 @@
     <string name="sound_disabled">Sonidos Silenciados</string>
     <string name="block_sound_alert_title">Sonido al Bloquear Llamada</string>
     <string name="block_sound_alert_desc">Reproduce un sonido de impacto retro cada vez que se bloquea una llamada desconocida.</string>
+    <string name="adjust_alert_volume_title">Ajustar Volumen de Alerta</string>
+    <string name="adjust_alert_volume_desc">Configura el volumen de la alerta de llamada bloqueada independientemente del volumen del sistema.</string>
+    <string name="test_sound_btn">Probar Sonido</string>
     <string name="tile_label">Escudo Blocky</string>
     <string name="tile_active">Activo</string>
     <string name="tile_inactive">Desactivado</string>
