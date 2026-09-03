@@ -41,7 +41,7 @@
     <string name="sound_effects_toggle">Efectos de Sonido</string>
     <string name="sound_enabled">Sonidos Activados</string>
     <string name="sound_disabled">Sonidos Silenciados</string>
-    <string name="block_sound_alert_title">Sonido al Bloquear Llamada</string>
+    <string name="block_sound_alert_title">Sonido al Bloquear</string>
     <string name="block_sound_alert_desc">Reproduce un sonido de impacto retro cada vez que se bloquea una llamada desconocida.</string>
     <string name="adjust_alert_volume_title">Ajustar Volumen de Alerta</string>
     <string name="adjust_alert_volume_desc">Configura el volumen de la alerta de llamada bloqueada independientemente del volumen del sistema.</string>
@@ -188,4 +188,5 @@
     <string name="unblock_all_dialog_desc">Esto desbloqueará cada número telefónico en tu lista de bloqueados y permitirá futuras llamadas de ellos.</string>
     <string name="unblock_all_dialog_confirm">Desbloquear todos</string>
     <string name="thank_you_message">¡Gracias por usar Blocky, espero que te ayude! =)</string>
+    <string name="app_version_footer">Blocky %1$s hecho en Campeche</string>
 </resources>

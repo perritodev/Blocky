@@ -188,4 +188,5 @@
     <string name="unblock_all_dialog_desc">This will unblock every phone number currently in your blocked list and allow future incoming calls from them.</string>
     <string name="unblock_all_dialog_confirm">Unblock All</string>
     <string name="thank_you_message">Thank you for using Blocky, i hope it helps you. =)</string>
+    <string name="app_version_footer">Blocky %1$s made in Campeche</string>
 </resources>

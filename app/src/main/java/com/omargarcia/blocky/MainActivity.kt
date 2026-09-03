@@ -2843,7 +2843,7 @@ fun ConfigurationScreen(
         }
 
         Text(
-            text = "Blocky $appVersionStr",
+            text = stringResource(R.string.app_version_footer, appVersionStr),
             style = MaterialTheme.typography.labelMedium,
             color = Color.White.copy(alpha = 0.5f),
             textAlign = TextAlign.Center,
