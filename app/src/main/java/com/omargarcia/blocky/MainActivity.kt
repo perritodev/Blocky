@@ -1169,6 +1169,7 @@ fun BlockyScreen(
                             track = { sliderState ->
                                 SliderDefaults.Track(
                                     sliderState = sliderState,
+                                    modifier = Modifier.scale(scaleX = 1f, scaleY = 0.45f),
                                     thumbTrackGapSize = 0.dp,
                                     trackInsideCornerSize = 0.dp,
                                     drawStopIndicator = null
