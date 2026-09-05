@@ -65,8 +65,16 @@ class SettingsManager(context: Context) {
             prefs.edit { putFloat(KEY_BLOCK_SOUND_VOLUME, value.coerceIn(0.0f, 1.0f)) }
         }
 
+    fun registerListener(listener: SharedPreferences.OnSharedPreferenceChangeListener) {
+        prefs.registerOnSharedPreferenceChangeListener(listener)
+    }
+
+    fun unregisterListener(listener: SharedPreferences.OnSharedPreferenceChangeListener) {
+        prefs.unregisterOnSharedPreferenceChangeListener(listener)
+    }
+
     companion object {
-        private const val KEY_BLOCKING_ENABLED = "blocking_enabled"
+        const val KEY_BLOCKING_ENABLED = "blocking_enabled"
         private const val KEY_LANGUAGE_CODE = "language_code"
         private const val KEY_ONBOARDING_COMPLETED = "onboarding_completed"
         private const val KEY_SOUND_ENABLED = "sound_enabled"

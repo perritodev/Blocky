@@ -6,12 +6,16 @@ import android.Manifest
 import android.app.role.RoleManager
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import android.provider.ContactsContract
 import android.provider.Settings
 import android.widget.Toast
@@ -162,6 +166,29 @@ fun MainContainer() {
     var currentLang by remember { mutableStateOf(settingsManager.languageCode) }
     var repeatCallThreshold by remember { mutableIntStateOf(settingsManager.repeatCallThreshold) }
     var repeatCallIntervalMinutes by remember { mutableIntStateOf(settingsManager.repeatCallIntervalMinutes) }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner, settingsManager) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                roleHeldState = checkRoleHeld(context)
+                isEnabled = settingsManager.isBlockingEnabled
+                BlockyTileService.requestTileUpdate(context)
+            }
+        }
+        val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == SettingsManager.KEY_BLOCKING_ENABLED) {
+                isEnabled = settingsManager.isBlockingEnabled
+            }
+        }
+        settingsManager.registerListener(prefListener)
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        onDispose {
+            settingsManager.unregisterListener(prefListener)
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
     
     val isProtectionActive = roleHeldState && isEnabled
 
@@ -250,10 +277,14 @@ fun MainContainer() {
                     currentLang = currentLang,
                     repeatCallThreshold = repeatCallThreshold,
                     repeatCallIntervalMinutes = repeatCallIntervalMinutes,
-                    onRoleChanged = { roleHeldState = it },
+                    onRoleChanged = {
+                        roleHeldState = it
+                        BlockyTileService.requestTileUpdate(context)
+                    },
                     onEnabledChanged = {
                         isEnabled = it
                         settingsManager.isBlockingEnabled = it
+                        BlockyTileService.requestTileUpdate(context)
                     },
                     onSoundEnabledChanged = {
                         isSoundEnabled = it

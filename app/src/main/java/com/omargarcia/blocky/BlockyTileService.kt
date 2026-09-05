@@ -1,13 +1,17 @@
 package com.omargarcia.blocky
 
+import android.Manifest
 import android.app.PendingIntent
 import android.app.role.RoleManager
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.drawable.Icon
 import android.os.Build
 import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
+import androidx.core.content.ContextCompat
 import com.omargarcia.blocky.data.SettingsManager
 
 class BlockyTileService : TileService() {
@@ -48,7 +52,14 @@ class BlockyTileService : TileService() {
         val statusIntent = Intent(this, StatusIndicatorService::class.java)
         if (newState) {
             try {
-                startForegroundService(statusIntent)
+                val hasNotificationPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+                } else {
+                    true
+                }
+                if (hasNotificationPermission) {
+                    startForegroundService(statusIntent)
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -89,6 +100,19 @@ class BlockyTileService : TileService() {
             roleManager.isRoleHeld(RoleManager.ROLE_CALL_SCREENING)
         } catch (_: Exception) {
             false
+        }
+    }
+
+    companion object {
+        fun requestTileUpdate(context: Context) {
+            try {
+                requestListeningState(
+                    context.applicationContext,
+                    ComponentName(context.applicationContext, BlockyTileService::class.java)
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 }
