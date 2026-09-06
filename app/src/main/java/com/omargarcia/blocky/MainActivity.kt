@@ -87,6 +87,7 @@ import java.util.*
 
 import com.omargarcia.blocky.utils.CsvContactHelper
 import com.omargarcia.blocky.utils.CsvExportOption
+import com.omargarcia.blocky.utils.DateGroupHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -1795,16 +1796,19 @@ fun BlockedListScreen(
         )
     }
 
-    val filteredList = remember(blockedList, searchQuery) {
+    val dateGroupHelper = remember(context) { DateGroupHelper(context) }
+
+    val filteredList = remember(blockedList, searchQuery, dateGroupHelper) {
         if (searchQuery.isBlank()) {
             blockedList
         } else {
-            blockedList.filter { matchesSearchQuery(context, it.phoneNumber, it.timestamp, searchQuery) }
+            val cleanQuery = searchQuery.trim().lowercase(Locale.getDefault())
+            blockedList.filter { dateGroupHelper.matchesSearchQuery(it.phoneNumber, it.timestamp, cleanQuery) }
         }
     }
 
-    val groupedByDate = remember(filteredList) {
-        filteredList.groupBy { getDateGroupTitle(context, it.timestamp) }
+    val groupedByDate = remember(filteredList, dateGroupHelper) {
+        filteredList.groupBy { dateGroupHelper.getDateGroupTitle(it.timestamp) }
     }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
@@ -2044,11 +2048,14 @@ fun WhitelistScreen(
         )
     }
 
-    val filteredList = remember(whitelist, searchQuery) {
+    val dateGroupHelper = remember(context) { DateGroupHelper(context) }
+
+    val filteredList = remember(whitelist, searchQuery, dateGroupHelper) {
         if (searchQuery.isBlank()) {
             whitelist
         } else {
-            whitelist.filter { matchesSearchQuery(context, it.phoneNumber, it.timestamp, searchQuery) }
+            val cleanQuery = searchQuery.trim().lowercase(Locale.getDefault())
+            whitelist.filter { dateGroupHelper.matchesSearchQuery(it.phoneNumber, it.timestamp, cleanQuery) }
         }
     }
 
@@ -3041,44 +3048,12 @@ fun PrivacyPolicyDialog(onDismiss: () -> Unit) {
 }
 
 fun getDateGroupTitle(context: Context, timestamp: Long): String {
-    val now = Calendar.getInstance()
-    val itemCal = Calendar.getInstance().apply { timeInMillis = timestamp }
-
-    val isSameYear = now.get(Calendar.YEAR) == itemCal.get(Calendar.YEAR)
-    val isSameDay = isSameYear && (now.get(Calendar.DAY_OF_YEAR) == itemCal.get(Calendar.DAY_OF_YEAR))
-    
-    if (isSameDay) {
-        return context.getString(R.string.group_today)
-    }
-
-    val yesterday = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -1) }
-    val isYesterday = yesterday.get(Calendar.YEAR) == itemCal.get(Calendar.YEAR) &&
-            yesterday.get(Calendar.DAY_OF_YEAR) == itemCal.get(Calendar.DAY_OF_YEAR)
-
-    if (isYesterday) {
-        return context.getString(R.string.group_yesterday)
-    }
-
-    val format = if (isSameYear) {
-        SimpleDateFormat("MMMM dd", Locale.getDefault())
-    } else {
-        SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault())
-    }
-    return format.format(Date(timestamp))
+    return DateGroupHelper(context).getDateGroupTitle(timestamp)
 }
 
 fun matchesSearchQuery(context: Context, phoneNumber: String, timestamp: Long, query: String): Boolean {
-    if (query.isBlank()) return true
-    val cleanQuery = query.trim().lowercase(Locale.getDefault())
-    if (phoneNumber.lowercase(Locale.getDefault()).contains(cleanQuery)) {
-        return true
-    }
-    val groupTitle = getDateGroupTitle(context, timestamp).lowercase(Locale.getDefault())
-    if (groupTitle.contains(cleanQuery)) {
-        return true
-    }
-    val fullDateFormat = SimpleDateFormat("yyyy-MM-dd MMMM dd yyyy", Locale.getDefault()).format(Date(timestamp)).lowercase(Locale.getDefault())
-    return fullDateFormat.contains(cleanQuery)
+    val helper = DateGroupHelper(context)
+    return helper.matchesSearchQuery(phoneNumber, timestamp, query.trim().lowercase(Locale.getDefault()))
 }
 
 fun launchAddToContacts(context: Context, phoneNumber: String) {
