@@ -93,19 +93,24 @@ class SoundManager(private val context: Context) {
         }
     }
 
-    fun stopAlertPreview() {
+    private fun cleanlyReleasePlayer(player: MediaPlayer?) {
+        if (player == null) return
         try {
-            alertMediaPlayer?.let { player ->
-                if (player.isPlaying) {
-                    player.stop()
-                }
-                player.release()
+            player.setOnCompletionListener(null)
+            player.setOnErrorListener(null)
+            player.setOnPreparedListener(null)
+            if (player.isPlaying) {
+                player.stop()
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        } finally {
-            alertMediaPlayer = null
+            player.reset()
+            player.release()
+        } catch (_: Exception) {
         }
+    }
+
+    fun stopAlertPreview() {
+        cleanlyReleasePlayer(alertMediaPlayer)
+        alertMediaPlayer = null
     }
 
     fun playAlienSound() {
@@ -116,6 +121,13 @@ class SoundManager(private val context: Context) {
             alienMediaPlayer = MediaPlayer.create(context, R.raw.alien_sound)?.apply {
                 isLooping = false
                 setVolume(0.10f, 0.10f)
+                setOnCompletionListener {
+                    stopAlienSound()
+                }
+                setOnErrorListener { _, _, _ ->
+                    stopAlienSound()
+                    true
+                }
                 start()
             }
 
@@ -147,16 +159,8 @@ class SoundManager(private val context: Context) {
     fun stopAlienSound() {
         alienFadeJob?.cancel()
         alienFadeJob = null
-        try {
-            if (alienMediaPlayer?.isPlaying == true) {
-                alienMediaPlayer?.stop()
-            }
-            alienMediaPlayer?.release()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        } finally {
-            alienMediaPlayer = null
-        }
+        cleanlyReleasePlayer(alienMediaPlayer)
+        alienMediaPlayer = null
     }
 
     fun playOnboardingTheme() {
@@ -167,6 +171,13 @@ class SoundManager(private val context: Context) {
             mediaPlayer = MediaPlayer.create(context, R.raw.music_welcome)?.apply {
                 isLooping = false
                 setVolume(0.40f, 0.40f)
+                setOnCompletionListener {
+                    stopMusic()
+                }
+                setOnErrorListener { _, _, _ ->
+                    stopMusic()
+                    true
+                }
                 start()
             }
 
@@ -198,16 +209,8 @@ class SoundManager(private val context: Context) {
     fun stopMusic() {
         fadeJob?.cancel()
         fadeJob = null
-        try {
-            if (mediaPlayer?.isPlaying == true) {
-                mediaPlayer?.stop()
-            }
-            mediaPlayer?.release()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        } finally {
-            mediaPlayer = null
-        }
+        cleanlyReleasePlayer(mediaPlayer)
+        mediaPlayer = null
     }
 
     fun release() {

@@ -34,6 +34,9 @@
     <string name="notification_channel_name">Estado de Blocky</string>
     <string name="notification_title">Blocky está protegiendo tu teléfono</string>
     <string name="notification_text">El servicio de bloqueo de llamadas está activo.</string>
+    <string name="notification_active_with_count_zero">Servicio activo • 0 llamadas bloqueadas hoy</string>
+    <string name="notification_active_with_count_one">Servicio activo • 1 llamada bloqueada hoy</string>
+    <string name="notification_active_with_count_many">Servicio activo • %d llamadas bloqueadas hoy</string>
 
     <string name="language_selection">Language / Idioma</string>
     <string name="lang_english">English</string>
