@@ -964,7 +964,7 @@ fun MainContent(
         bottomBar = {
             NavigationBar {
                 NavigationBarItem(
-                    icon = { Icon(Icons.Default.Shield, null) },
+                    icon = { Icon(painterResource(R.drawable.ic_stat_blocky), null, modifier = Modifier.size(24.dp)) },
                     label = { Text(stringResource(R.string.protection_tab)) },
                     selected = selectedTab == 0,
                     onClick = {
