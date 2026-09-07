@@ -13,8 +13,14 @@ import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
 import androidx.core.content.ContextCompat
 import com.omargarcia.blocky.data.SettingsManager
+import com.omargarcia.blocky.utils.LocaleHelper
 
 class BlockyTileService : TileService() {
+
+    override fun attachBaseContext(newBase: Context) {
+        val localizedContext = LocaleHelper.getLocalizedContext(newBase)
+        super.attachBaseContext(localizedContext)
+    }
 
     override fun onStartListening() {
         super.onStartListening()
@@ -76,19 +82,20 @@ class BlockyTileService : TileService() {
 
     private fun updateTileState() {
         val tile = qsTile ?: return
+        val localizedContext = LocaleHelper.getLocalizedContext(this)
         val settingsManager = SettingsManager(this)
         val roleHeld = isRoleHeld()
         val isProtectionActive = roleHeld && settingsManager.isBlockingEnabled
 
-        tile.label = getString(R.string.tile_label)
+        tile.label = localizedContext.getString(R.string.tile_label)
         tile.icon = Icon.createWithResource(this, R.drawable.ic_control_center_tile)
 
         if (isProtectionActive) {
             tile.state = Tile.STATE_ACTIVE
-            tile.subtitle = getString(R.string.tile_active)
+            tile.subtitle = localizedContext.getString(R.string.tile_active)
         } else {
             tile.state = Tile.STATE_INACTIVE
-            tile.subtitle = if (!roleHeld) getString(R.string.shield_down) else getString(R.string.tile_inactive)
+            tile.subtitle = if (!roleHeld) localizedContext.getString(R.string.shield_down) else localizedContext.getString(R.string.tile_inactive)
         }
 
         tile.updateTile()

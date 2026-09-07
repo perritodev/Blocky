@@ -2,15 +2,20 @@ package com.omargarcia.blocky
 
 import android.Manifest
 import android.app.*
+import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
+import android.content.res.Configuration
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.omargarcia.blocky.data.AppDatabase
+import com.omargarcia.blocky.data.SettingsManager
 import com.omargarcia.blocky.utils.DateGroupHelper
+import com.omargarcia.blocky.utils.LocaleHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -23,6 +28,25 @@ class StatusIndicatorService : Service() {
     private val serviceScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private var countCollectorJob: Job? = null
     private var currentDailyCount: Int = 0
+    private var settingsManager: SettingsManager? = null
+
+    private val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key == SettingsManager.KEY_LANGUAGE_CODE) {
+            updateNotification()
+        }
+    }
+
+    override fun attachBaseContext(newBase: Context) {
+        val localizedContext = LocaleHelper.getLocalizedContext(newBase)
+        super.attachBaseContext(localizedContext)
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        settingsManager = SettingsManager(this).also {
+            it.registerListener(prefListener)
+        }
+    }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -35,17 +59,17 @@ class StatusIndicatorService : Service() {
         }
 
         createNotificationChannel()
-        val initialNotification = createNotification(currentDailyCount)
+        val currentNotification = createNotification(currentDailyCount)
         
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                 startForeground(
                     NOTIFICATION_ID,
-                    initialNotification,
+                    currentNotification,
                     ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
                 )
             } else {
-                startForeground(NOTIFICATION_ID, initialNotification)
+                startForeground(NOTIFICATION_ID, currentNotification)
             }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -53,9 +77,26 @@ class StatusIndicatorService : Service() {
             return START_NOT_STICKY
         }
 
+        if (intent?.action == ACTION_REFRESH_NOTIFICATION) {
+            updateNotification()
+            return START_STICKY
+        }
+
         observeDailyBlockedCalls()
         
         return START_STICKY
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        updateNotification()
+    }
+
+    private fun updateNotification() {
+        createNotificationChannel()
+        val updatedNotification = createNotification(currentDailyCount)
+        val manager = getSystemService(NotificationManager::class.java)
+        manager?.notify(NOTIFICATION_ID, updatedNotification)
     }
 
     private fun observeDailyBlockedCalls() {
@@ -67,9 +108,7 @@ class StatusIndicatorService : Service() {
 
             historyDao.getDailyBlockedCount(startOfToday).collect { count ->
                 currentDailyCount = count
-                val updatedNotification = createNotification(count)
-                val manager = getSystemService(NotificationManager::class.java)
-                manager?.notify(NOTIFICATION_ID, updatedNotification)
+                updateNotification()
             }
         }
     }
@@ -84,14 +123,16 @@ class StatusIndicatorService : Service() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
+        val localizedContext = LocaleHelper.getLocalizedContext(this)
+
         val countText = when (dailyCount) {
-            0 -> getString(R.string.notification_active_with_count_zero)
-            1 -> getString(R.string.notification_active_with_count_one)
-            else -> getString(R.string.notification_active_with_count_many, dailyCount)
+            0 -> localizedContext.getString(R.string.notification_active_with_count_zero)
+            1 -> localizedContext.getString(R.string.notification_active_with_count_one)
+            else -> localizedContext.getString(R.string.notification_active_with_count_many, dailyCount)
         }
 
-        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle(getString(R.string.notification_title))
+        val builder = NotificationCompat.Builder(localizedContext, CHANNEL_ID)
+            .setContentTitle(localizedContext.getString(R.string.notification_title))
             .setContentText(countText)
             .setSmallIcon(R.drawable.ic_stat_blocky)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT) // Ensures prominent status bar display
@@ -114,13 +155,15 @@ class StatusIndicatorService : Service() {
             manager.deleteNotificationChannel("blocky_status_channel_v2")
         } catch (_: Exception) {}
 
+        val localizedContext = LocaleHelper.getLocalizedContext(this)
+
         // Use IMPORTANCE_DEFAULT without sound/vibration so the status bar icon is always visible
         val serviceChannel = NotificationChannel(
             CHANNEL_ID,
-            getString(R.string.notification_channel_name),
+            localizedContext.getString(R.string.notification_channel_name),
             NotificationManager.IMPORTANCE_DEFAULT
         ).apply {
-            description = getString(R.string.notification_text)
+            description = localizedContext.getString(R.string.notification_text)
             setSound(null, null) // Completely silent
             enableVibration(false)
             setShowBadge(false)
@@ -130,12 +173,29 @@ class StatusIndicatorService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        settingsManager?.unregisterListener(prefListener)
         countCollectorJob?.cancel()
         serviceScope.cancel()
     }
 
     companion object {
+        const val ACTION_REFRESH_NOTIFICATION = "com.omargarcia.blocky.action.REFRESH_NOTIFICATION"
         private const val CHANNEL_ID = "blocky_status_channel_v3" // v3 ensures fresh channel with IMPORTANCE_DEFAULT
         private const val NOTIFICATION_ID = 1001
+
+        fun refreshNotification(context: Context) {
+            val intent = Intent(context, StatusIndicatorService::class.java).apply {
+                action = ACTION_REFRESH_NOTIFICATION
+            }
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    context.startForegroundService(intent)
+                } else {
+                    context.startService(intent)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
     }
 }

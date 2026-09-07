@@ -75,7 +75,7 @@ class SettingsManager(context: Context) {
 
     companion object {
         const val KEY_BLOCKING_ENABLED = "blocking_enabled"
-        private const val KEY_LANGUAGE_CODE = "language_code"
+        const val KEY_LANGUAGE_CODE = "language_code"
         private const val KEY_ONBOARDING_COMPLETED = "onboarding_completed"
         private const val KEY_SOUND_ENABLED = "sound_enabled"
         private const val KEY_BLOCK_SOUND_ENABLED = "block_sound_enabled"

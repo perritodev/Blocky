@@ -48,7 +48,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
 import androidx.compose.material.icons.automirrored.filled.VolumeDown
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
@@ -306,6 +305,9 @@ fun MainContainer() {
                         settingsManager.languageCode = lang
                         currentLang = lang
                         updateAppLocale(context, lang)
+                        if (isProtectionActive) {
+                            StatusIndicatorService.refreshNotification(context)
+                        }
                     },
                     onThresholdChanged = { threshold ->
                         repeatCallThreshold = threshold
@@ -982,7 +984,7 @@ fun MainContent(
                     }
                 )
                 NavigationBarItem(
-                    icon = { Icon(Icons.AutoMirrored.Filled.FormatListBulleted, null) },
+                    icon = { Icon(Icons.Default.Check, null) },
                     label = { Text(stringResource(R.string.whitelist_tab)) },
                     selected = selectedTab == 2,
                     onClick = {
@@ -2066,7 +2068,7 @@ fun WhitelistScreen(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Icon(
-                imageVector = Icons.AutoMirrored.Filled.FormatListBulleted,
+                imageVector = Icons.Default.Check,
                 contentDescription = null,
                 modifier = Modifier.size(32.dp),
                 tint = Color.White
