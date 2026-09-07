@@ -32,7 +32,7 @@
     <string name="active_indicator">La protección está activa</string>
 
     <string name="notification_channel_name">Estado de Blocky</string>
-    <string name="notification_title">Blocky está protegiendo tu teléfono</string>
+    <string name="notification_title">Blocky te está protegiendo.</string>
     <string name="notification_text">El servicio de bloqueo de llamadas está activo.</string>
     <string name="notification_active_with_count_zero">Servicio activo • 0 llamadas bloqueadas hoy</string>
     <string name="notification_active_with_count_one">Servicio activo • 1 llamada bloqueada hoy</string>
