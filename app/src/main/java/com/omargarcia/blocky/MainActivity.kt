@@ -2122,14 +2122,28 @@ fun WhitelistScreen(
 
         if (whitelist.isEmpty()) {
             Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                Text(
-                    text = stringResource(R.string.whitelist_empty),
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center,
-                    fontFamily = VT323Font,
-                    fontSize = 24.sp,
-                    color = Color.White.copy(alpha = 0.8f)
-                )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = stringResource(R.string.whitelist_empty),
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                        fontFamily = VT323Font,
+                        fontSize = 24.sp,
+                        color = Color.White.copy(alpha = 0.8f)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = stringResource(R.string.whitelist_empty_hint),
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                        fontFamily = VT323Font,
+                        fontSize = 20.sp,
+                        color = Color.White.copy(alpha = 0.6f)
+                    )
+                }
             }
         } else if (filteredList.isEmpty()) {
             Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {

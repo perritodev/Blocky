@@ -87,6 +87,7 @@
     <!-- New Features -->
     <string name="whitelist_title">Números Permitidos</string>
     <string name="whitelist_empty">No hay números en la lista blanca.</string>
+    <string name="whitelist_empty_hint">Añade un número con el botón +.</string>
     <string name="add_to_whitelist">Permitir Número</string>
     <string name="remove_from_whitelist">Quitar de Lista Blanca</string>
     <string name="clear_all_history">Borrar Registro</string>

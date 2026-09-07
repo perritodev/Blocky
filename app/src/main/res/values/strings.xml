@@ -87,6 +87,7 @@
     <!-- New Features -->
     <string name="whitelist_title">Whitelisted Numbers</string>
     <string name="whitelist_empty">No whitelisted numbers yet.</string>
+    <string name="whitelist_empty_hint">Add a number with the + button.</string>
     <string name="add_to_whitelist">Add to Whitelist</string>
     <string name="remove_from_whitelist">Remove from Whitelist</string>
     <string name="clear_all_history">Clear Log</string>
