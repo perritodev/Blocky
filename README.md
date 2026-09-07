@@ -20,7 +20,7 @@ Everything happens directly on your device. There are no accounts, no cloud serv
 
 ---
 
-## 🌐 English
+## 🇬🇧 English
 
 ### 💡 Why Blocky?
 
@@ -73,7 +73,7 @@ Blocky is open-source software released under the MIT License. See the LICENSE f
 
 ---
 
-## 🌐 Español
+## 🇲🇽 Español
 
 ### 💡 ¿Por qué Blocky?
 
