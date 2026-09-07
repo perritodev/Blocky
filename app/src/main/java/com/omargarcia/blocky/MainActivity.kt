@@ -32,9 +32,11 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateOffsetAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -1031,51 +1033,86 @@ fun MainContent(
                     }
                     
                     Box(modifier = Modifier.weight(1f)) {
-                        when (selectedTab) {
-                            0 -> BlockyScreen(
-                                blockedCount = blockedCount,
-                                isRoleHeldInitial = roleHeld,
-                                onRoleChanged = onRoleChanged,
-                                isEnabledInitial = isEnabled,
-                                onEnabledChanged = onEnabledChanged,
-                                isBlockSoundEnabled = isBlockSoundEnabled,
-                                onBlockSoundEnabledChanged = onBlockSoundEnabledChanged,
-                                blockSoundVolume = blockSoundVolume,
-                                onBlockSoundVolumeChanged = onBlockSoundVolumeChanged,
-                                repeatCallThreshold = repeatCallThreshold,
-                                repeatCallIntervalMinutes = repeatCallIntervalMinutes,
-                                onThresholdChanged = onThresholdChanged,
-                                onIntervalMinutesChanged = onIntervalMinutesChanged,
-                            )
-                            1 -> BlockedListScreen(
-                                blockedList = blockedList,
-                                onUnblock = onUnblockNumber,
-                                onUnblockAll = onUnblockAll,
-                                onWhitelist = onAddToWhitelistFromBlocked,
-                                onDeletePermanent = onDeleteBlockedPermanent,
-                                onAddManualNumber = onAddBlockedManualNumber
-                            )
-                            2 -> WhitelistScreen(
-                                whitelist = whitelist,
-                                onRemove = onRemoveFromWhitelist,
-                                onDeletePermanent = onDeleteWhitelistPermanent,
-                                onBlockNumber = onAddToBlockedFromWhitelist,
-                                onAddManualNumber = onAddWhitelistManualNumber
-                            )
-                            3 -> ConfigurationScreen(
-                                roleHeld = roleHeld,
-                                onRoleChanged = onRoleChanged,
-                                currentLang = currentLang,
-                                onLanguageChanged = onLanguageChanged,
-                                onShowPrivacyPolicy = {
-                                    soundManager?.playClick()
-                                    showPrivacyPolicyModal = true
-                                },
-                                onExportNumbers = onExportNumbersToCsv,
-                                onSaveNumbersToLocalFile = onSaveNumbersToLocalFile,
-                                onImportBlocked = onImportNumbersToBlocked,
-                                onImportWhitelist = onImportNumbersToWhitelist
-                            )
+                        AnimatedContent(
+                            targetState = selectedTab,
+                            modifier = Modifier.fillMaxSize(),
+                            transitionSpec = {
+                                if (targetState > initialState) {
+                                    (slideInHorizontally(
+                                        animationSpec = tween(durationMillis = 280, easing = FastOutSlowInEasing)
+                                    ) { width -> width / 3 } + fadeIn(
+                                        animationSpec = tween(durationMillis = 280)
+                                    )).togetherWith(
+                                        slideOutHorizontally(
+                                            animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing)
+                                        ) { width -> -width / 3 } + fadeOut(
+                                            animationSpec = tween(durationMillis = 200)
+                                        )
+                                    )
+                                } else {
+                                    (slideInHorizontally(
+                                        animationSpec = tween(durationMillis = 280, easing = FastOutSlowInEasing)
+                                    ) { width -> -width / 3 } + fadeIn(
+                                        animationSpec = tween(durationMillis = 280)
+                                    )).togetherWith(
+                                        slideOutHorizontally(
+                                            animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing)
+                                        ) { width -> width / 3 } + fadeOut(
+                                            animationSpec = tween(durationMillis = 200)
+                                        )
+                                    )
+                                }.using(
+                                    SizeTransform(clip = false)
+                                )
+                            },
+                            label = "TabContentAnimation"
+                        ) { targetTab ->
+                            when (targetTab) {
+                                0 -> BlockyScreen(
+                                    blockedCount = blockedCount,
+                                    isRoleHeldInitial = roleHeld,
+                                    onRoleChanged = onRoleChanged,
+                                    isEnabledInitial = isEnabled,
+                                    onEnabledChanged = onEnabledChanged,
+                                    isBlockSoundEnabled = isBlockSoundEnabled,
+                                    onBlockSoundEnabledChanged = onBlockSoundEnabledChanged,
+                                    blockSoundVolume = blockSoundVolume,
+                                    onBlockSoundVolumeChanged = onBlockSoundVolumeChanged,
+                                    repeatCallThreshold = repeatCallThreshold,
+                                    repeatCallIntervalMinutes = repeatCallIntervalMinutes,
+                                    onThresholdChanged = onThresholdChanged,
+                                    onIntervalMinutesChanged = onIntervalMinutesChanged,
+                                )
+                                1 -> BlockedListScreen(
+                                    blockedList = blockedList,
+                                    onUnblock = onUnblockNumber,
+                                    onUnblockAll = onUnblockAll,
+                                    onWhitelist = onAddToWhitelistFromBlocked,
+                                    onDeletePermanent = onDeleteBlockedPermanent,
+                                    onAddManualNumber = onAddBlockedManualNumber
+                                )
+                                2 -> WhitelistScreen(
+                                    whitelist = whitelist,
+                                    onRemove = onRemoveFromWhitelist,
+                                    onDeletePermanent = onDeleteWhitelistPermanent,
+                                    onBlockNumber = onAddToBlockedFromWhitelist,
+                                    onAddManualNumber = onAddWhitelistManualNumber
+                                )
+                                3 -> ConfigurationScreen(
+                                    roleHeld = roleHeld,
+                                    onRoleChanged = onRoleChanged,
+                                    currentLang = currentLang,
+                                    onLanguageChanged = onLanguageChanged,
+                                    onShowPrivacyPolicy = {
+                                        soundManager?.playClick()
+                                        showPrivacyPolicyModal = true
+                                    },
+                                    onExportNumbers = onExportNumbersToCsv,
+                                    onSaveNumbersToLocalFile = onSaveNumbersToLocalFile,
+                                    onImportBlocked = onImportNumbersToBlocked,
+                                    onImportWhitelist = onImportNumbersToWhitelist
+                                )
+                            }
                         }
                     }
                 }
