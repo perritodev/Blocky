@@ -24,8 +24,8 @@ android {
         applicationId = "com.omargarcia.Blocky"
         minSdk = 29
         targetSdk = 37
-        versionCode = 19
-        versionName = "1.0.17"
+        versionCode = 20
+        versionName = "1.0.18"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

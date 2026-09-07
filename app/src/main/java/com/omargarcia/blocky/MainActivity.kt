@@ -610,7 +610,7 @@ fun OnboardingScreen(
         PrivacyPolicyDialog(onDismiss = { showPrivacyPolicyModal = false })
     }
 
-    val parallaxOffset by rememberParallaxOffset(maxOffsetPx = 45f)
+    val parallaxOffset by rememberParallaxOffset()
 
     Box(
         modifier = Modifier
@@ -623,7 +623,7 @@ fun OnboardingScreen(
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxSize()
-                .scale(1.22f)
+                .scale(1.38f)
                 .offset { IntOffset(parallaxOffset.x.roundToInt(), parallaxOffset.y.roundToInt()) },
             alpha = 0.30f
         )
@@ -767,7 +767,7 @@ fun OnboardingStep(title: String, desc: String, isDone: Boolean, btnText: String
 }
 
 @Composable
-fun rememberParallaxOffset(maxOffsetPx: Float = 45f): State<Offset> {
+fun rememberParallaxOffset(maxOffsetX: Float = 48f, maxOffsetY: Float = 42f): State<Offset> {
     val context = LocalContext.current
     val isInPreview = LocalInspectionMode.current
     val targetOffset = remember { mutableStateOf(Offset.Zero) }
@@ -782,53 +782,59 @@ fun rememberParallaxOffset(maxOffsetPx: Float = 45f): State<Offset> {
 
             val listener = object : SensorEventListener {
                 private val rotationMatrix = FloatArray(9)
-                private val orientation = FloatArray(3)
-                private var baselinePitch = Float.NaN
-                private var baselineRoll = Float.NaN
+                private var baselineTiltX = Float.NaN
+                private var baselineTiltY = Float.NaN
+                private var smoothedX = 0f
+                private var smoothedY = 0f
 
                 override fun onSensorChanged(event: SensorEvent) {
+                    val tiltX: Float
+                    val tiltY: Float
+
                     when (event.sensor.type) {
                         Sensor.TYPE_ROTATION_VECTOR -> {
                             SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
-                            SensorManager.getOrientation(rotationMatrix, orientation)
-                            val pitch = orientation[1]
-                            val roll = orientation[2]
-
-                            if (baselinePitch.isNaN()) {
-                                baselinePitch = pitch
-                                baselineRoll = roll
-                            } else {
-                                baselinePitch += (pitch - baselinePitch) * 0.003f
-                                baselineRoll += (roll - baselineRoll) * 0.003f
-                            }
-
-                            val diffRoll = (roll - baselineRoll).coerceIn(-0.45f, 0.45f)
-                            val diffPitch = (pitch - baselinePitch).coerceIn(-0.45f, 0.45f)
-
-                            val x = -diffRoll * (maxOffsetPx / 0.45f)
-                            val y = -diffPitch * (maxOffsetPx / 0.45f)
-                            targetOffset.value = Offset(x, y)
+                            // Direct gravity vector from rotation matrix avoids Euler angle gimbal lock at 90° portrait:
+                            // rotationMatrix[6] = lateral tilt (X)
+                            // rotationMatrix[7] = longitudinal pitch tilt (Y)
+                            tiltX = rotationMatrix[6]
+                            tiltY = rotationMatrix[7]
                         }
                         Sensor.TYPE_ACCELEROMETER -> {
-                            val rawX = event.values[0]
-                            val rawY = event.values[1]
-
-                            if (baselineRoll.isNaN()) {
-                                baselineRoll = rawX
-                                baselinePitch = rawY
-                            } else {
-                                baselineRoll += (rawX - baselineRoll) * 0.003f
-                                baselinePitch += (rawY - baselinePitch) * 0.003f
-                            }
-
-                            val diffX = (rawX - baselineRoll).coerceIn(-4.0f, 4.0f)
-                            val diffY = (rawY - baselinePitch).coerceIn(-4.0f, 4.0f)
-
-                            val x = diffX * (maxOffsetPx / 4.0f)
-                            val y = -diffY * (maxOffsetPx / 4.0f)
-                            targetOffset.value = Offset(x, y)
+                            // Normalize accelerometer values to match rotation matrix scale:
+                            tiltX = event.values[0] / 9.81f
+                            tiltY = -event.values[1] / 9.81f
                         }
+                        else -> return
                     }
+
+                    if (baselineTiltY.isNaN()) {
+                        baselineTiltX = tiltX
+                        baselineTiltY = tiltY
+                        smoothedX = 0f
+                        smoothedY = 0f
+                        targetOffset.value = Offset.Zero
+                        return
+                    } else {
+                        // Gently adapt baseline to holding posture shifts over time
+                        baselineTiltX += (tiltX - baselineTiltX) * 0.005f
+                        baselineTiltY += (tiltY - baselineTiltY) * 0.005f
+                    }
+
+                    val diffX = (tiltX - baselineTiltX).coerceIn(-0.45f, 0.45f)
+                    val diffY = (tiltY - baselineTiltY).coerceIn(-0.45f, 0.45f)
+
+                    // Follow the physical movement of the phone:
+                    // Tilt right -> background glides right (+X)
+                    // Tilt down -> background glides down (+Y)
+                    val rawTargetX = -diffX * (maxOffsetX / 0.45f)
+                    val rawTargetY = diffY * (maxOffsetY / 0.45f)
+
+                    // Responsive EMA low-pass filter eliminates micro-tremors with zero lag
+                    smoothedX += (rawTargetX - smoothedX) * 0.22f
+                    smoothedY += (rawTargetY - smoothedY) * 0.22f
+
+                    targetOffset.value = Offset(smoothedX, smoothedY)
                 }
 
                 override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
@@ -848,7 +854,7 @@ fun rememberParallaxOffset(maxOffsetPx: Float = 45f): State<Offset> {
     return animateOffsetAsState(
         targetValue = targetOffset.value,
         animationSpec = spring(
-            stiffness = Spring.StiffnessLow,
+            stiffness = Spring.StiffnessMedium,
             dampingRatio = Spring.DampingRatioNoBouncy
         ),
         label = "ParallaxOffset"
@@ -892,7 +898,7 @@ fun MainContent(
     onSaveNumbersToLocalFile: (CsvExportOption) -> Unit = {},
     onFinishOnboarding: () -> Unit,
 ) {
-    val parallaxOffset by rememberParallaxOffset(maxOffsetPx = 45f)
+    val parallaxOffset by rememberParallaxOffset()
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
     val context = LocalContext.current
     val isInPreview = LocalInspectionMode.current
@@ -916,7 +922,7 @@ fun MainContent(
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxSize()
-                .scale(1.22f)
+                .scale(1.38f)
                 .offset { IntOffset(parallaxOffset.x.roundToInt(), parallaxOffset.y.roundToInt()) },
             alpha = 0.30f
         )
@@ -2553,7 +2559,7 @@ fun ConfigurationScreen(
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
-                Toast.makeText(context, "Error reading CSV file", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, R.string.csv_import_error, Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -2892,7 +2898,7 @@ fun ConfigurationScreen(
                 try {
                     context.startActivity(intent)
                 } catch (_: Exception) {
-                    Toast.makeText(context, "No email app found", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, R.string.no_email_app_found, Toast.LENGTH_SHORT).show()
                 }
             },
             modifier = Modifier.fillMaxWidth(),

@@ -140,6 +140,8 @@
     <string name="csv_export_success">Exported %d numbers to CSV successfully</string>
     <string name="csv_import_success">Imported %d numbers successfully</string>
     <string name="csv_import_empty">No valid numbers found in the selected CSV file</string>
+    <string name="csv_import_error">Error reading CSV file</string>
+    <string name="no_email_app_found">No email app found</string>
     <string name="import_target_dialog_title">Import Numbers To</string>
     <string name="import_target_dialog_desc">Choose which list you want to import the %d numbers into:</string>
     <string name="import_to_blocked">Blocked List</string>
