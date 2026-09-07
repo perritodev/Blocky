@@ -93,7 +93,7 @@ class StatusIndicatorService : Service() {
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(getString(R.string.notification_title))
             .setContentText(countText)
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.drawable.ic_stat_blocky)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT) // Ensures prominent status bar display
             .setCategory(Notification.CATEGORY_SERVICE)
             .setContentIntent(pendingIntent)
