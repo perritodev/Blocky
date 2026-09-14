@@ -3,12 +3,15 @@ package com.omargarcia.blocky
 import android.Manifest
 import android.content.pm.PackageManager
 import android.database.Cursor
+import android.media.AudioAttributes
 import android.media.MediaPlayer
+import android.media.SoundPool
 import android.net.Uri
 import android.provider.ContactsContract
 import android.telecom.Call
 import android.telecom.CallScreeningService
 import android.telephony.PhoneNumberUtils
+import android.util.Log
 import androidx.core.content.ContextCompat
 import com.omargarcia.blocky.data.AppDatabase
 import com.omargarcia.blocky.data.BlockedCall
@@ -16,15 +19,64 @@ import com.omargarcia.blocky.data.BlockedCallDao
 import com.omargarcia.blocky.data.SettingsManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
 class CallBlockerService : CallScreeningService() {
 
-    private val serviceScope = CoroutineScope(Dispatchers.IO)
+    private val serviceJob = SupervisorJob()
+    private val serviceScope = CoroutineScope(serviceJob + Dispatchers.IO)
+
+    private var soundPool: SoundPool? = null
+    private var hitSoundId: Int = 0
+    private var isSoundLoaded: Boolean = false
+
+    override fun onCreate() {
+        super.onCreate()
+        initSoundPool()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        serviceScope.cancel()
+        soundPool?.release()
+        soundPool = null
+    }
+
+    private fun initSoundPool() {
+        try {
+            val audioAttributes = AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .build()
+
+            soundPool = SoundPool.Builder()
+                .setMaxStreams(3)
+                .setAudioAttributes(audioAttributes)
+                .build()
+
+            soundPool?.setOnLoadCompleteListener { _, _, status ->
+                if (status == 0) {
+                    isSoundLoaded = true
+                }
+            }
+            hitSoundId = soundPool?.load(this, R.raw.sfx_hit, 1) ?: 0
+        } catch (e: Exception) {
+            Log.e(TAG, "Error initializing SoundPool", e)
+        }
+    }
 
     override fun onScreenCall(callDetails: Call.Details) {
+        // Fast-path 1: Never screen or block outgoing calls
+        if (callDetails.callDirection == Call.Details.DIRECTION_OUTGOING) {
+            respondToCall(callDetails, CallResponse.Builder().build())
+            return
+        }
+
         val settingsManager = SettingsManager(this)
         
+        // Fast-path 2: If protection shield is disabled, immediately allow call
         if (!settingsManager.isBlockingEnabled) {
             respondToCall(callDetails, CallResponse.Builder().build())
             return
@@ -34,71 +86,83 @@ class CallBlockerService : CallScreeningService() {
         val normalizedNumber = PhoneNumberUtils.normalizeNumber(rawNumber)
 
         serviceScope.launch {
-            val db = AppDatabase.getDatabase(applicationContext)
-            val whitelistDao = db.whitelistedNumberDao()
-            val permanentBlockDao = db.permanentBlockedNumberDao()
-            val unblockedDao = db.unblockedNumberDao()
-            val historyDao = db.blockedCallDao()
+            try {
+                val db = AppDatabase.getDatabase(applicationContext)
+                val whitelistDao = db.whitelistedNumberDao()
+                val permanentBlockDao = db.permanentBlockedNumberDao()
+                val unblockedDao = db.unblockedNumberDao()
+                val historyDao = db.blockedCallDao()
 
-            // Handle Private / Hidden / Anonymous numbers
-            if (rawNumber.isBlank()) {
-                blockCall(callDetails, "Private / Unknown", historyDao, settingsManager)
-                return@launch
-            }
+                // 1. Handle Private / Hidden / Anonymous numbers -> Block
+                if (rawNumber.isBlank()) {
+                    blockCall(callDetails, "Private / Unknown", historyDao, settingsManager)
+                    return@launch
+                }
 
-            // 1. Check if number is explicitly in the permanent blocked list
-            val blockedList = permanentBlockDao.getAllList().map { it.phoneNumber }
-            if (isNumberInList(rawNumber, normalizedNumber, blockedList)) {
-                blockCall(callDetails, rawNumber, historyDao, settingsManager)
-                return@launch
-            }
+                // 2. Check if number is explicitly in the permanent blocked list
+                val blockedList = permanentBlockDao.getAllList().map { it.phoneNumber }
+                if (isNumberInList(rawNumber, normalizedNumber, blockedList)) {
+                    blockCall(callDetails, rawNumber, historyDao, settingsManager)
+                    return@launch
+                }
 
-            // 2. Check if number was unblocked by the user
-            val unblockedList = unblockedDao.getAllList().map { it.phoneNumber }
-            if (isNumberInList(rawNumber, normalizedNumber, unblockedList)) {
-                allowCall(callDetails)
-                return@launch
-            }
-
-            // 3. Check if number is whitelisted
-            val whitelist = whitelistDao.getAllList().map { it.phoneNumber }
-            if (isNumberInList(rawNumber, normalizedNumber, whitelist)) {
-                allowCall(callDetails)
-                return@launch
-            }
-
-            // 4. Check if number is in user's Contacts (with strict verification)
-            val inContacts = isNumberInContacts(rawNumber) || 
-                            (normalizedNumber.isNotBlank() && isNumberInContacts(normalizedNumber))
-            if (inContacts) {
-                allowCall(callDetails)
-                return@launch
-            }
-
-            // 5. Check repeat caller threshold (if configured > 1)
-            val threshold = settingsManager.repeatCallThreshold
-            if (threshold > 1) {
-                val intervalMinutes = settingsManager.repeatCallIntervalMinutes
-                val windowStartTime = System.currentTimeMillis() - (intervalMinutes * 60 * 1000L)
-                val recentBlockedCalls = historyDao.getBlockedCallsSinceList(windowStartTime)
-                val recentMatchingCount = countMatchingCalls(rawNumber, normalizedNumber, recentBlockedCalls)
-                val totalAttempts = recentMatchingCount + 1
-                if (totalAttempts >= threshold) {
+                // 3. Check if number was unblocked by the user
+                val unblockedList = unblockedDao.getAllList().map { it.phoneNumber }
+                if (isNumberInList(rawNumber, normalizedNumber, unblockedList)) {
                     allowCall(callDetails)
                     return@launch
                 }
-            }
 
-            // 6. Unknown caller not in contacts or whitelist -> Block
-            blockCall(callDetails, rawNumber, historyDao, settingsManager)
+                // 4. Check if number is whitelisted
+                val whitelist = whitelistDao.getAllList().map { it.phoneNumber }
+                if (isNumberInList(rawNumber, normalizedNumber, whitelist)) {
+                    allowCall(callDetails)
+                    return@launch
+                }
+
+                // 5. Check if number is in user's Contacts (deduplicated lookup)
+                val inContacts = isNumberInContacts(rawNumber) || 
+                                (normalizedNumber.isNotBlank() && normalizedNumber != rawNumber && isNumberInContacts(normalizedNumber))
+                if (inContacts) {
+                    allowCall(callDetails)
+                    return@launch
+                }
+
+                // 6. Check repeat caller threshold (if configured > 1)
+                val threshold = settingsManager.repeatCallThreshold
+                if (threshold > 1) {
+                    val intervalMinutes = settingsManager.repeatCallIntervalMinutes
+                    val windowStartTime = System.currentTimeMillis() - (intervalMinutes * 60 * 1000L)
+                    val recentBlockedCalls = historyDao.getBlockedCallsSinceList(windowStartTime)
+                    val recentMatchingCount = countMatchingCalls(rawNumber, normalizedNumber, recentBlockedCalls)
+                    val totalAttempts = recentMatchingCount + 1
+                    if (totalAttempts >= threshold) {
+                        allowCall(callDetails)
+                        return@launch
+                    }
+                }
+
+                // 7. Unknown caller not in contacts or whitelist -> Block
+                blockCall(callDetails, rawNumber, historyDao, settingsManager)
+            } catch (t: Throwable) {
+                Log.e(TAG, "Unexpected error during call screening", t)
+                // Defensive fallback: ensure Telecom always receives a response
+                try {
+                    respondToCall(callDetails, CallResponse.Builder().build())
+                } catch (_: Exception) {}
+            }
         }
     }
 
     private fun allowCall(callDetails: Call.Details) {
-        respondToCall(callDetails, CallResponse.Builder().build())
+        try {
+            respondToCall(callDetails, CallResponse.Builder().build())
+        } catch (e: Exception) {
+            Log.e(TAG, "Error dispatching allowCall response", e)
+        }
     }
 
-    private suspend fun blockCall(
+    private fun blockCall(
         callDetails: Call.Details, 
         displayLogNumber: String, 
         historyDao: BlockedCallDao,
@@ -107,13 +171,29 @@ class CallBlockerService : CallScreeningService() {
         val response = CallResponse.Builder()
             .setDisallowCall(true)
             .setRejectCall(true)
+            .setSilenceCall(true)
             .setSkipCallLog(false)
             .setSkipNotification(true)
             .build()
 
-        historyDao.insert(BlockedCall(phoneNumber = displayLogNumber))
+        // 1. Respond to Telecom IMMEDIATELY with zero latency
+        try {
+            respondToCall(callDetails, response)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error dispatching blockCall response", e)
+        }
+
+        // 2. Play sound alert asynchronously without blocking Telecom
         playBlockedSound(settingsManager)
-        respondToCall(callDetails, response)
+
+        // 3. Persist to Room database asynchronously in background
+        serviceScope.launch {
+            try {
+                historyDao.insert(BlockedCall(phoneNumber = displayLogNumber))
+            } catch (e: Exception) {
+                Log.e(TAG, "Error inserting blocked call into history", e)
+            }
+        }
     }
 
     private fun playBlockedSound(settingsManager: SettingsManager) {
@@ -122,30 +202,37 @@ class CallBlockerService : CallScreeningService() {
             val rawVolume = settingsManager.blockSoundVolume.coerceIn(0.0f, 1.0f)
             val gain = if (rawVolume <= 0.02f) 0.0f else (rawVolume * rawVolume)
             if (gain <= 0.0f) return
-            val player = MediaPlayer.create(applicationContext, R.raw.sfx_hit)
-            player?.apply {
-                setVolume(gain, gain)
-                setOnCompletionListener { mp ->
-                    try {
-                        mp.stop()
-                        mp.release()
-                    } catch (_: Exception) {}
+
+            if (soundPool != null && hitSoundId != 0 && isSoundLoaded) {
+                soundPool?.play(hitSoundId, gain, gain, 1, 0, 1.0f)
+            } else {
+                // Fallback player if SoundPool is loading or unavailable
+                val player = MediaPlayer.create(applicationContext, R.raw.sfx_hit)
+                player?.apply {
+                    setVolume(gain, gain)
+                    setOnCompletionListener { mp ->
+                        try {
+                            mp.stop()
+                            mp.release()
+                        } catch (_: Exception) {}
+                    }
+                    setOnErrorListener { mp, _, _ ->
+                        try {
+                            mp.release()
+                        } catch (_: Exception) {}
+                        true
+                    }
+                    start()
                 }
-                setOnErrorListener { mp, _, _ ->
-                    try {
-                        mp.release()
-                    } catch (_: Exception) {}
-                    true
-                }
-                start()
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(TAG, "Error playing blocked sound", e)
         }
     }
 
     @Suppress("DEPRECATION")
     private fun isNumberInList(rawNumber: String, normalizedNumber: String, list: List<String>): Boolean {
+        if (list.isEmpty()) return false
         for (item in list) {
             val normalizedItem = PhoneNumberUtils.normalizeNumber(item)
             if (item == rawNumber || 
@@ -191,7 +278,7 @@ class CallBlockerService : CallScreeningService() {
                 }
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(TAG, "Error querying contacts for number", e)
         } finally {
             cursor?.close()
         }
@@ -215,5 +302,10 @@ class CallBlockerService : CallScreeningService() {
         }
         return count
     }
+
+    companion object {
+        private const val TAG = "CallBlockerService"
+    }
 }
+
 

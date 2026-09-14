@@ -195,4 +195,20 @@
     <string name="unblock_all_dialog_confirm">Desbloquear todos</string>
     <string name="thank_you_message">¡Gracias por usar Blocky, espero que te ayude! =)</string>
     <string name="app_version_footer">Blocky %1$s hecho en Campeche</string>
+
+    <!-- In-App Updates -->
+    <string name="updates_card_title">Actualizaciones</string>
+    <string name="updates_card_desc">Mantén Blocky actualizado con las últimas mejoras de filtrado y parches de seguridad.</string>
+    <string name="updates_btn_check">Buscar actualizaciones</string>
+    <string name="updates_status_checking">Buscando actualizaciones…</string>
+    <string name="updates_status_up_to_date">Blocky está actualizado (%1$s)</string>
+    <string name="updates_status_available">Actualización disponible: %1$s</string>
+    <string name="updates_toast_up_to_date">Estás usando la versión más reciente de Blocky (%1$s)</string>
+    <string name="updates_toast_error">No se pudo comprobar actualizaciones. Revisa tu conexión a internet.</string>
+    <string name="updates_toast_downloading">Abriendo descarga de %1$s…</string>
+    <string name="update_dialog_title">Nueva Versión Disponible</string>
+    <string name="update_dialog_version">La versión %1$s ya está disponible (actual: %2$s)</string>
+    <string name="update_dialog_changelog">Novedades</string>
+    <string name="update_dialog_install_now">Instalar ahora</string>
+    <string name="update_dialog_later">Más tarde</string>
 </resources>

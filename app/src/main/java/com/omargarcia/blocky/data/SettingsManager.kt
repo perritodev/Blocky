@@ -65,6 +65,24 @@ class SettingsManager(context: Context) {
             prefs.edit { putFloat(KEY_BLOCK_SOUND_VOLUME, value.coerceIn(0.0f, 1.0f)) }
         }
 
+    var lastUpdateCheckTimestamp: Long
+        get() = prefs.getLong(KEY_LAST_UPDATE_CHECK_TIMESTAMP, 0L)
+        set(value) {
+            prefs.edit { putLong(KEY_LAST_UPDATE_CHECK_TIMESTAMP, value) }
+        }
+
+    var cachedLatestVersion: String?
+        get() = prefs.getString(KEY_CACHED_LATEST_VERSION, null)
+        set(value) {
+            prefs.edit { putString(KEY_CACHED_LATEST_VERSION, value) }
+        }
+
+    var hasPendingUpdate: Boolean
+        get() = prefs.getBoolean(KEY_HAS_PENDING_UPDATE, false)
+        set(value) {
+            prefs.edit { putBoolean(KEY_HAS_PENDING_UPDATE, value) }
+        }
+
     fun registerListener(listener: SharedPreferences.OnSharedPreferenceChangeListener) {
         prefs.registerOnSharedPreferenceChangeListener(listener)
     }
@@ -82,5 +100,8 @@ class SettingsManager(context: Context) {
         private const val KEY_BLOCK_SOUND_VOLUME = "block_sound_volume"
         private const val KEY_REPEAT_CALL_THRESHOLD = "repeat_call_threshold"
         private const val KEY_REPEAT_CALL_INTERVAL_MINUTES = "repeat_call_interval_minutes"
+        private const val KEY_LAST_UPDATE_CHECK_TIMESTAMP = "last_update_check_timestamp"
+        private const val KEY_CACHED_LATEST_VERSION = "cached_latest_version"
+        private const val KEY_HAS_PENDING_UPDATE = "has_pending_update"
     }
 }

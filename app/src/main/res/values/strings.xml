@@ -195,4 +195,20 @@
     <string name="unblock_all_dialog_confirm">Unblock All</string>
     <string name="thank_you_message">Thank you for using Blocky, i hope it helps you. =)</string>
     <string name="app_version_footer">Blocky %1$s made in Campeche</string>
+
+    <!-- In-App Updates -->
+    <string name="updates_card_title">App Updates</string>
+    <string name="updates_card_desc">Keep Blocky updated with the latest call screening enhancements and security fixes.</string>
+    <string name="updates_btn_check">Check for Updates</string>
+    <string name="updates_status_checking">Checking for updates…</string>
+    <string name="updates_status_up_to_date">Blocky is up to date (%1$s)</string>
+    <string name="updates_status_available">Update available: %1$s</string>
+    <string name="updates_toast_up_to_date">You\'re using the latest version of Blocky (%1$s)</string>
+    <string name="updates_toast_error">Unable to check for updates. Check internet connection.</string>
+    <string name="updates_toast_downloading">Opening download for %1$s…</string>
+    <string name="update_dialog_title">New Version Available</string>
+    <string name="update_dialog_version">Version %1$s is now available (current: %2$s)</string>
+    <string name="update_dialog_changelog">What\'s New</string>
+    <string name="update_dialog_install_now">Install Now</string>
+    <string name="update_dialog_later">Later</string>
 </resources>
