@@ -89,6 +89,8 @@ import java.util.*
 import com.omargarcia.blocky.utils.CsvContactHelper
 import com.omargarcia.blocky.utils.CsvExportOption
 import com.omargarcia.blocky.utils.DateGroupHelper
+import com.omargarcia.blocky.utils.AppUpdateInfo
+import com.omargarcia.blocky.utils.UpdateChecker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -168,6 +170,73 @@ fun MainContainer() {
     var currentLang by remember { mutableStateOf(settingsManager.languageCode) }
     var repeatCallThreshold by remember { mutableIntStateOf(settingsManager.repeatCallThreshold) }
     var repeatCallIntervalMinutes by remember { mutableIntStateOf(settingsManager.repeatCallIntervalMinutes) }
+
+    val currentAppVersion = remember { UpdateChecker.getCurrentVersionName(context) }
+    var pendingUpdateInfo by remember { mutableStateOf<AppUpdateInfo?>(null) }
+    var isCheckingUpdates by remember { mutableStateOf(false) }
+    var hasPendingUpdate by remember { mutableStateOf(settingsManager.hasPendingUpdate) }
+    var cachedLatestVersion by remember { mutableStateOf(settingsManager.cachedLatestVersion) }
+
+    // Daily automatic check for updates on app startup
+    LaunchedEffect(Unit) {
+        val lastCheck = settingsManager.lastUpdateCheckTimestamp
+        val now = System.currentTimeMillis()
+        val oneDayMillis = 24 * 60 * 60 * 1000L
+        if (now - lastCheck >= oneDayMillis) {
+            scope.launch(Dispatchers.IO) {
+                UpdateChecker.checkLatestRelease(currentAppVersion).onSuccess { updateInfo ->
+                    settingsManager.lastUpdateCheckTimestamp = System.currentTimeMillis()
+                    if (updateInfo.isUpdateAvailable) {
+                        settingsManager.cachedLatestVersion = updateInfo.latestVersion
+                        settingsManager.hasPendingUpdate = true
+                        withContext(Dispatchers.Main) {
+                            cachedLatestVersion = updateInfo.latestVersion
+                            hasPendingUpdate = true
+                            pendingUpdateInfo = updateInfo
+                        }
+                    } else {
+                        settingsManager.hasPendingUpdate = false
+                        withContext(Dispatchers.Main) {
+                            hasPendingUpdate = false
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    val performUpdateCheck: () -> Unit = {
+        soundManager.playClick()
+        if (!isCheckingUpdates) {
+            isCheckingUpdates = true
+            scope.launch(Dispatchers.IO) {
+                val result = UpdateChecker.checkLatestRelease(currentAppVersion)
+                settingsManager.lastUpdateCheckTimestamp = System.currentTimeMillis()
+                withContext(Dispatchers.Main) {
+                    isCheckingUpdates = false
+                    result.onSuccess { updateInfo ->
+                        if (updateInfo.isUpdateAvailable) {
+                            settingsManager.cachedLatestVersion = updateInfo.latestVersion
+                            settingsManager.hasPendingUpdate = true
+                            cachedLatestVersion = updateInfo.latestVersion
+                            hasPendingUpdate = true
+                            pendingUpdateInfo = updateInfo
+                        } else {
+                            settingsManager.hasPendingUpdate = false
+                            hasPendingUpdate = false
+                            Toast.makeText(
+                                context,
+                                context.getString(R.string.updates_toast_up_to_date, currentAppVersion),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }.onFailure {
+                        Toast.makeText(context, R.string.updates_toast_error, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
+    }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner, settingsManager) {
@@ -457,7 +526,11 @@ fun MainContainer() {
                     }
                     pendingSaveExportOption = exportOption
                     exportCsvDocumentLauncher.launch(filename)
-                }
+                },
+                isCheckingUpdates = isCheckingUpdates,
+                hasPendingUpdate = hasPendingUpdate,
+                cachedLatestVersion = cachedLatestVersion,
+                onCheckForUpdates = performUpdateCheck
             ) {
                 isOnboardingCompleted = false
             }
@@ -472,6 +545,34 @@ fun MainContainer() {
                 }
             )
         }
+    }
+
+    if (pendingUpdateInfo != null) {
+        val updateInfo = pendingUpdateInfo!!
+        UpdateAvailableDialog(
+            updateInfo = updateInfo,
+            onDismiss = {
+                soundManager.playClick()
+                pendingUpdateInfo = null
+                settingsManager.lastUpdateCheckTimestamp = System.currentTimeMillis()
+            },
+            onInstallNow = {
+                soundManager.playClick()
+                pendingUpdateInfo = null
+                settingsManager.lastUpdateCheckTimestamp = System.currentTimeMillis()
+                val targetUrl = updateInfo.apkDownloadUrl ?: updateInfo.releaseHtmlUrl
+                val toastMsg = context.getString(R.string.updates_toast_downloading, updateInfo.latestVersion)
+                Toast.makeText(context, toastMsg, Toast.LENGTH_SHORT).show()
+                try {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(targetUrl)).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    }
+                    context.startActivity(intent)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        )
     }
 }
 }
@@ -896,6 +997,10 @@ fun MainContent(
     onImportNumbersToWhitelist: (List<String>) -> Unit,
     onExportNumbersToCsv: (CsvExportOption) -> Unit,
     onSaveNumbersToLocalFile: (CsvExportOption) -> Unit = {},
+    isCheckingUpdates: Boolean = false,
+    hasPendingUpdate: Boolean = false,
+    cachedLatestVersion: String? = null,
+    onCheckForUpdates: () -> Unit = {},
     onFinishOnboarding: () -> Unit,
 ) {
     val parallaxOffset by rememberParallaxOffset()
@@ -1116,7 +1221,11 @@ fun MainContent(
                                     onExportNumbers = onExportNumbersToCsv,
                                     onSaveNumbersToLocalFile = onSaveNumbersToLocalFile,
                                     onImportBlocked = onImportNumbersToBlocked,
-                                    onImportWhitelist = onImportNumbersToWhitelist
+                                    onImportWhitelist = onImportNumbersToWhitelist,
+                                    isCheckingUpdates = isCheckingUpdates,
+                                    hasPendingUpdate = hasPendingUpdate,
+                                    cachedLatestVersion = cachedLatestVersion,
+                                    onCheckForUpdates = onCheckForUpdates
                                 )
                             }
                         }
@@ -2505,13 +2614,30 @@ fun ConfigurationScreen(
     onExportNumbers: (CsvExportOption) -> Unit = {},
     onSaveNumbersToLocalFile: (CsvExportOption) -> Unit = {},
     onImportBlocked: (List<String>) -> Unit = {},
-    onImportWhitelist: (List<String>) -> Unit = {}
+    onImportWhitelist: (List<String>) -> Unit = {},
+    isCheckingUpdates: Boolean = false,
+    hasPendingUpdate: Boolean = false,
+    cachedLatestVersion: String? = null,
+    onCheckForUpdates: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val soundManager = LocalSoundManager.current
     val isInPreview = LocalInspectionMode.current
     val scrollState = rememberScrollState()
     val coroutineScope = rememberCoroutineScope()
+
+    val appVersionStr = remember(isInPreview) {
+        if (isInPreview) {
+            "v1.0.18"
+        } else {
+            try {
+                val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+                "v${pInfo.versionName}"
+            } catch (_: Exception) {
+                "v1.0.18"
+            }
+        }
+    }
 
     var notificationState by remember {
         mutableStateOf(
@@ -2869,7 +2995,115 @@ fun ConfigurationScreen(
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        // 3. Contact Developer Button
+        // 3. App Updates Card
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)),
+            shape = RoundedCornerShape(14.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.SystemUpdate,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        text = stringResource(R.string.updates_card_title),
+                        fontFamily = VT323Font,
+                        fontSize = 21.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+                Text(
+                    text = stringResource(R.string.updates_card_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.75f)
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.weight(1f, fill = false)
+                    ) {
+                        if (isCheckingUpdates) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = stringResource(R.string.updates_status_checking),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.White.copy(alpha = 0.85f)
+                            )
+                        } else if (hasPendingUpdate && !cachedLatestVersion.isNullOrBlank()) {
+                            Icon(
+                                imageVector = Icons.Default.NewReleases,
+                                contentDescription = null,
+                                tint = Color(0xFFFFCC00),
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Text(
+                                text = stringResource(R.string.updates_status_available, cachedLatestVersion),
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFFFFCC00)
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = Color(0xFF4CAF50),
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Text(
+                                text = stringResource(R.string.updates_status_up_to_date, appVersionStr),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.White.copy(alpha = 0.85f)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Button(
+                        onClick = onCheckForUpdates,
+                        enabled = !isCheckingUpdates,
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (hasPendingUpdate) Icons.Default.Download else Icons.Default.Refresh,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = if (hasPendingUpdate) stringResource(R.string.update_dialog_install_now) else stringResource(R.string.updates_btn_check),
+                            fontSize = 11.sp,
+                            maxLines = 1
+                        )
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // 4. Contact Developer Button
         val deviceInfoHeader = stringResource(R.string.device_info_header)
         val supportSubject = stringResource(R.string.support_email_subject)
         
@@ -2911,7 +3145,7 @@ fun ConfigurationScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // 4. Privacy Policy Button
+        // 5. Privacy Policy Button
         Button(
             onClick = {
                 soundManager?.playClick()
@@ -2926,19 +3160,6 @@ fun ConfigurationScreen(
         }
 
         Spacer(modifier = Modifier.height(16.dp))
-
-        val appVersionStr = remember(isInPreview) {
-            if (isInPreview) {
-                "v1.0.16"
-            } else {
-                try {
-                    val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-                    "v${pInfo.versionName}"
-                } catch (_: Exception) {
-                    "v1.0.16"
-                }
-            }
-        }
 
         Text(
             text = stringResource(R.string.app_version_footer, appVersionStr),
@@ -3101,6 +3322,103 @@ fun PrivacyPolicyDialog(onDismiss: () -> Unit) {
         confirmButton = {
             Button(onClick = onDismiss) {
                 Text(stringResource(R.string.close_btn))
+            }
+        }
+    )
+}
+
+@Composable
+fun UpdateAvailableDialog(
+    updateInfo: AppUpdateInfo,
+    onDismiss: () -> Unit,
+    onInstallNow: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Icon(
+                imageVector = Icons.Default.SystemUpdate,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(32.dp)
+            )
+        },
+        title = {
+            Text(
+                text = stringResource(R.string.update_dialog_title),
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Surface(
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(10.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = stringResource(
+                                R.string.update_dialog_version,
+                                updateInfo.latestVersion,
+                                updateInfo.currentVersion
+                            ),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color.White,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+
+                if (updateInfo.releaseNotes.isNotBlank()) {
+                    Text(
+                        text = stringResource(R.string.update_dialog_changelog),
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = updateInfo.releaseNotes,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.White.copy(alpha = 0.85f),
+                            modifier = Modifier.padding(10.dp)
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onInstallNow,
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Download,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(stringResource(R.string.update_dialog_install_now))
+            }
+        },
+        dismissButton = {
+            OutlinedButton(onClick = onDismiss) {
+                Text(stringResource(R.string.update_dialog_later))
             }
         }
     )
