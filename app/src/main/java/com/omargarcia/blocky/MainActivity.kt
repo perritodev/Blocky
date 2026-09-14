@@ -593,7 +593,7 @@ fun LanguageFlagButton(
             soundManager?.playClick()
             onLanguageChanged(nextLang)
         },
-        shape = RoundedCornerShape(10.dp),
+        shape = RoundedCornerShape(4.dp),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)),
         modifier = modifier
@@ -2708,6 +2708,7 @@ fun ConfigurationScreen(
                             soundManager?.playClick()
                             selectedExportOption = CsvExportOption.ALL
                         },
+                        shape = RoundedCornerShape(4.dp),
                         leadingIcon = if (selectedExportOption == CsvExportOption.ALL) {
                             { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
                         } else null,
@@ -2721,6 +2722,7 @@ fun ConfigurationScreen(
                             soundManager?.playClick()
                             selectedExportOption = CsvExportOption.BLOCKED_ONLY
                         },
+                        shape = RoundedCornerShape(4.dp),
                         leadingIcon = if (selectedExportOption == CsvExportOption.BLOCKED_ONLY) {
                             { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
                         } else null,
@@ -2734,6 +2736,7 @@ fun ConfigurationScreen(
                             soundManager?.playClick()
                             selectedExportOption = CsvExportOption.WHITELIST_ONLY
                         },
+                        shape = RoundedCornerShape(4.dp),
                         leadingIcon = if (selectedExportOption == CsvExportOption.WHITELIST_ONLY) {
                             { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
                         } else null,
@@ -2749,6 +2752,7 @@ fun ConfigurationScreen(
                             showExportChoiceDialog = false
                             onExportNumbers(selectedExportOption)
                         },
+                        shape = RoundedCornerShape(4.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -2762,6 +2766,7 @@ fun ConfigurationScreen(
                             showExportChoiceDialog = false
                             onSaveNumbersToLocalFile(selectedExportOption)
                         },
+                        shape = RoundedCornerShape(4.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Icon(Icons.Default.Save, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -2772,7 +2777,10 @@ fun ConfigurationScreen(
             },
             confirmButton = {},
             dismissButton = {
-                TextButton(onClick = { showExportChoiceDialog = false }) {
+                TextButton(
+                    onClick = { showExportChoiceDialog = false },
+                    shape = RoundedCornerShape(4.dp)
+                ) {
                     Text(stringResource(R.string.cancel_btn))
                 }
             }
@@ -2792,7 +2800,8 @@ fun ConfigurationScreen(
                         soundManager?.playClick()
                         onImportBlocked(numbers)
                         pendingImportNumbers = null
-                    }
+                    },
+                    shape = RoundedCornerShape(4.dp)
                 ) {
                     Text(stringResource(R.string.import_to_blocked))
                 }
@@ -2803,7 +2812,8 @@ fun ConfigurationScreen(
                         soundManager?.playClick()
                         onImportWhitelist(numbers)
                         pendingImportNumbers = null
-                    }
+                    },
+                    shape = RoundedCornerShape(4.dp)
                 ) {
                     Text(stringResource(R.string.import_to_whitelist))
                 }
@@ -2971,6 +2981,7 @@ fun ConfigurationScreen(
                             soundManager?.playClick()
                             showExportChoiceDialog = true
                         },
+                        shape = RoundedCornerShape(4.dp),
                         modifier = Modifier.weight(1f)
                     ) {
                         Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -2983,6 +2994,7 @@ fun ConfigurationScreen(
                             soundManager?.playClick()
                             importCsvLauncher.launch(arrayOf("text/*", "text/csv", "application/csv"))
                         },
+                        shape = RoundedCornerShape(4.dp),
                         modifier = Modifier.weight(1f)
                     ) {
                         Icon(Icons.Default.FileDownload, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -3083,6 +3095,7 @@ fun ConfigurationScreen(
                     Button(
                         onClick = onCheckForUpdates,
                         enabled = !isCheckingUpdates,
+                        shape = RoundedCornerShape(4.dp),
                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                     ) {
                         Icon(
@@ -3135,6 +3148,7 @@ fun ConfigurationScreen(
                     Toast.makeText(context, R.string.no_email_app_found, Toast.LENGTH_SHORT).show()
                 }
             },
+            shape = RoundedCornerShape(4.dp),
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
         ) {
@@ -3151,6 +3165,7 @@ fun ConfigurationScreen(
                 soundManager?.playClick()
                 onShowPrivacyPolicy()
             },
+            shape = RoundedCornerShape(4.dp),
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
         ) {
@@ -3288,8 +3303,9 @@ fun PermissionCheckRow(
             )
         }
         if (!isGranted) {
-            TextButton(
+            OutlinedButton(
                 onClick = onAction,
+                shape = RoundedCornerShape(4.dp),
                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
             ) {
                 Text(btnText, fontSize = 12.sp)
@@ -3320,7 +3336,10 @@ fun PrivacyPolicyDialog(onDismiss: () -> Unit) {
             }
         },
         confirmButton = {
-            Button(onClick = onDismiss) {
+            Button(
+                onClick = onDismiss,
+                shape = RoundedCornerShape(4.dp)
+            ) {
                 Text(stringResource(R.string.close_btn))
             }
         }
@@ -3405,6 +3424,7 @@ fun UpdateAvailableDialog(
         confirmButton = {
             Button(
                 onClick = onInstallNow,
+                shape = RoundedCornerShape(4.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
                 Icon(
@@ -3417,7 +3437,10 @@ fun UpdateAvailableDialog(
             }
         },
         dismissButton = {
-            OutlinedButton(onClick = onDismiss) {
+            OutlinedButton(
+                onClick = onDismiss,
+                shape = RoundedCornerShape(4.dp)
+            ) {
                 Text(stringResource(R.string.update_dialog_later))
             }
         }
